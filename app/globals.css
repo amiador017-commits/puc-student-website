@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+:root {
+  --background: #09090b; /* zinc-950 */
+  --foreground: #f8fafc;
+  --card-bg: #18181b; /* zinc-900 */
+  --border-opacity: rgba(255, 255, 255, 0.05);
+  --accent-glow: #a3e635; /* lime-400 */
+  --accent-glow-border: rgba(163, 230, 53, 0.3);
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-dm-sans), sans-serif;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-syne), sans-serif;
+  }
+
+  .number-display {
+    font-family: var(--font-space-mono), monospace;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.clay-panel {
+  background-color: #121216;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  box-shadow: 
+    20px 20px 40px rgba(0, 0, 0, 0.5), 
+    inset -8px -8px 16px rgba(0, 0, 0, 0.75), 
+    inset 4px 4px 8px rgba(255, 255, 255, 0.04);
+}
+
+.clay-inset {
+  background-color: #0b0b0e;
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.65), 
+    inset -2px -2px 4px rgba(255, 255, 255, 0.03);
+  border: none;
+}
+
+/* Toggle switch height utility */
+.h-5\.5 {
+  height: 1.375rem;
+}
