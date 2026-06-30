@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
@@ -13,7 +13,7 @@ import {
   GraduationCap
 } from "lucide-react";
 import Link from "next/link";
-import { register, login, setSession, isValidStudentId } from "../lib/auth";
+import { register, login, isValidStudentId, googleLogin } from "../lib/auth";
 
 interface AuthFormProps {
   initialMode: "login" | "signup";
@@ -100,12 +100,12 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    // ── Student ID validation ──────────────────────────────────────────────
+    // â”€â”€ Student ID validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!studentId.trim()) {
       setStudentIdError("Please enter your Student ID.");
       return;
@@ -134,55 +134,52 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
 
     setIsLoading(true);
 
-    // Small artificial delay for UX
-    setTimeout(() => {
-      if (isSignUp) {
-        const result = register({
-          studentId: studentId.trim(),
-          name: name.trim(),
-          phone: phone.trim() || undefined,
-          semester,
-          section,
-          department,
-          password,
-        });
+    if (isSignUp) {
+      const result = await register({
+        studentId: studentId.trim(),
+        name: name.trim(),
+        phone: phone.trim() || undefined,
+        semester,
+        section,
+        department,
+        password,
+      });
 
-        setIsLoading(false);
+      setIsLoading(false);
 
-        if (result.success === false) {
-          if (result.error === "Invalid") {
-            setStudentIdError("Invalid");
-          } else {
-            setError(result.error);
-          }
-          return;
+      if (!result.success) {
+        const err = (result as { success: false; error: string }).error;
+        if (err === "Invalid") {
+          setStudentIdError("Invalid");
+        } else {
+          setError(err);
         }
-
-        setSession(result.user);
-        setSuccess(`Registration successful for Batch ${calculatedBatch}! Redirecting...`);
-        setTimeout(() => router.push("/"), 1400);
-      } else {
-        const result = login({
-          studentId: studentId.trim(),
-          password,
-        });
-
-        setIsLoading(false);
-
-        if (result.success === false) {
-          if (result.error === "Invalid") {
-            setStudentIdError("Invalid");
-          } else {
-            setError(result.error);
-          }
-          return;
-        }
-
-        setSession(result.user);
-        setSuccess("Logged in successfully! Redirecting...");
-        setTimeout(() => router.push("/"), 1400);
+        return;
       }
-    }, 700);
+
+      setSuccess(`Registration successful for Batch ${calculatedBatch}! Redirecting...`);
+      setTimeout(() => router.push("/"), 1400);
+    } else {
+      const result = await login({
+        studentId: studentId.trim(),
+        password,
+      });
+
+      setIsLoading(false);
+
+      if (!result.success) {
+        const err = (result as { success: false; error: string }).error;
+        if (err === "Invalid") {
+          setStudentIdError("Invalid");
+        } else {
+          setError(err);
+        }
+        return;
+      }
+
+      setSuccess("Logged in successfully! Redirecting...");
+      setTimeout(() => router.push("/"), 1400);
+    }
   };
 
   return (
@@ -696,6 +693,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
               {/* Google login button */}
               <button
                 type="button"
+                onClick={googleLogin}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-[11px] font-semibold text-white border border-white/[0.02] transition-all hover:bg-white/[0.02] active:translate-y-[1px]"
                 style={{
                   background: "#1c1c22",
@@ -732,3 +730,4 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
     </div>
   );
 }
+

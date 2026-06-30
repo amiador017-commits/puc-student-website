@@ -3,8 +3,10 @@ import { useState, useEffect } from "react";
 import { Award, BookOpen, Activity, MoreHorizontal, TrendingUp } from "lucide-react";
 import CourseCard from "../components/CourseCard";
 import NotificationsPanel from "../components/NotificationsPanel";
-import { COURSES, SEMESTERS, calculateGPA } from "../lib/mockData";
-import { getSession } from "../lib/auth";
+import { SEMESTERS, calculateGPA, type Course, mapDbRowsToCourses } from "../lib/mockData";
+import { createClient } from "../lib/supabase";
+import { useSession } from "../lib/useSession";
+import { getCoursesWithGrades } from "../lib/grades";
 
 function StatCard({
   title,
@@ -87,25 +89,50 @@ function SemesterPill({
 
 export default function OverviewPage() {
   const [selectedSemester, setSelectedSemester] = useState(1);
-  const [userName, setUserName] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const session = useSession();
 
-  // Pre-select the semester the student enrolled in
   useEffect(() => {
-    const session = getSession();
-    if (session?.semester) {
-      setSelectedSemester(session.semester);
-    }
-    if (session?.name) {
-      setUserName(session.name);
-    }
-  }, []);
+    if (!session) return;
 
-  const currentCourses = COURSES.filter((c) => c.semester === selectedSemester);
-  const cgpa = calculateGPA(COURSES);
-  const totalCredits = COURSES.reduce((acc, c) => acc + c.credits, 0);
-  const avgAttendance = Math.round(
-    COURSES.reduce((acc, c) => acc + c.grades.attendance, 0) / COURSES.length
-  );
+    setSelectedSemester(session.semester);
+
+    const supabase = createClient();
+
+    async function fetchData() {
+      const [{ data: courseRows }, { data: componentRows }] = await Promise.all([
+        supabase.from("courses").select("course_id, code, name, semester, credits, instructor"),
+        supabase.from("course_assessment_components").select("course_id, component_key, label, max_marks"),
+      ]);
+
+      const mapped = mapDbRowsToCourses(courseRows ?? [], componentRows ?? []);
+      const withGrades = await getCoursesWithGrades(session.studentId, mapped);
+      setCourses(withGrades);
+    }
+
+    fetchData();
+  }, [session?.studentId]);
+
+  const refreshCourses = async () => {
+    if (!session?.studentId) return;
+    const supabase = createClient();
+
+    const [{ data: courseRows }, { data: componentRows }] = await Promise.all([
+      supabase.from("courses").select("course_id, code, name, semester, credits, instructor"),
+      supabase.from("course_assessment_components").select("course_id, component_key, label, max_marks"),
+    ]);
+
+    const mapped = mapDbRowsToCourses(courseRows ?? [], componentRows ?? []);
+    const withGrades = await getCoursesWithGrades(session.studentId, mapped);
+    setCourses(withGrades);
+  };
+
+  const currentCourses = courses.filter((c) => c.semester === selectedSemester);
+  const cgpa = calculateGPA(courses);
+  const totalCredits = courses.reduce((acc, c) => acc + c.credits, 0);
+  const avgAttendance = courses.length > 0
+    ? Math.round(courses.reduce((acc, c) => acc + c.grades.attendance, 0) / courses.length)
+    : 0;
 
   return (
     <div className="flex min-h-screen">
@@ -115,9 +142,9 @@ export default function OverviewPage() {
         <header className="mb-8">
           <p className="text-xs text-gray-600 mb-1 font-space-mono tracking-widest uppercase">Dashboards / Overview</p>
           <h1 className="text-2xl font-syne font-bold text-white">
-            {userName ? `Welcome, ${userName.split(" ")[0]} 👋` : "Overview"}
+            {session?.name ? `Welcome, ${session.name.split(" ")[0]} 👋` : "Overview"}
           </h1>
-          {userName && (
+          {session?.name && (
             <p className="text-xs text-gray-500 mt-1">Here&apos;s your academic overview for Semester {selectedSemester}.</p>
           )}
         </header>
@@ -179,7 +206,7 @@ export default function OverviewPage() {
           {/* Course grid */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             {currentCourses.map((course) => (
-              <CourseCard key={course.courseId} course={course} />
+              <CourseCard key={course.courseId} course={course} onGradesUpdate={refreshCourses} />
             ))}
           </div>
         </section>

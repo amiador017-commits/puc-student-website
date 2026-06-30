@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Mail, Phone, Lock, Bell, Eye, Globe, Shield, Save, Check } from "lucide-react";
+import { updateProfile } from "../../lib/auth";
+import { useSession } from "../../lib/useSession";
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -34,12 +36,14 @@ function InputField({
   onChange,
   type = "text",
   placeholder,
+  readOnly,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div>
@@ -49,7 +53,8 @@ function InputField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-neon/30 transition-all"
+        readOnly={readOnly}
+        className={`w-full rounded-2xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-neon/30 transition-all ${readOnly ? "opacity-60 cursor-default" : ""}`}
         style={{
           background: "#0b0b0e",
           boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
@@ -58,6 +63,62 @@ function InputField({
     </div>
   );
 }
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string | number;
+  onChange: (v: string) => void;
+  options: { value: string | number; label: string }[];
+}) {
+  return (
+    <div>
+      <label className="block text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neon/30 transition-all bg-[#0b0b0e] appearance-none cursor-pointer"
+        style={{
+          backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 16px center',
+          backgroundSize: '16px',
+          boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
+        }}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} className="bg-[#121216]">
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+const SEMESTER_OPTIONS = [
+  { value: 1, label: "1st Semester" },
+  { value: 2, label: "2nd Semester" },
+  { value: 3, label: "3rd Semester" },
+  { value: 4, label: "4th Semester" },
+  { value: 5, label: "5th Semester" },
+  { value: 6, label: "6th Semester" },
+  { value: 7, label: "7th Semester" },
+  { value: 8, label: "8th Semester" },
+];
+
+const SECTION_OPTIONS = [
+  { value: "A", label: "Section A" },
+  { value: "B", label: "Section B" },
+  { value: "C", label: "Section C" },
+  { value: "D", label: "Section D" },
+  { value: "E", label: "Section E" },
+  { value: "F", label: "Section F" },
+];
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -75,10 +136,33 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 export default function SettingsPage() {
-  const [name, setName] = useState("Ador");
-  const [email, setEmail] = useState("ador@puc.edu.bd");
-  const [phone, setPhone] = useState("+880-123-456-789");
+  const [name, setName] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [department, setDepartment] = useState("");
+  const [semester, setSemester] = useState(0);
+  const [section, setSection] = useState("");
+  const [batch, setBatch] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [inputGmail, setInputGmail] = useState("");
+  const [linkingLoading, setLinkingLoading] = useState(false);
+  const session = useSession();
+
+  useEffect(() => {
+    if (session) {
+      setName(session.name);
+      setStudentId(session.studentId);
+      setPhone(session.phone ?? "");
+      setDepartment(session.department);
+      setSemester(session.semester);
+      setSection(session.section);
+      setBatch(session.batch);
+      // Keep blank until linked with a personal Gmail account
+      setEmail(session.linkedGmail ?? "");
+    }
+  }, [session]);
 
   const [notifications, setNotifications] = useState({
     assignments: true,
@@ -89,9 +173,44 @@ export default function SettingsPage() {
     newsletter: false,
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    await updateProfile({
+      name,
+      phone,
+      linkedGmail: email || undefined,
+      semester,
+      section,
+    });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setTimeout(() => {
+      setSaved(false);
+      window.location.reload();
+    }, 1500);
+  };
+
+  const handleLinkGmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputGmail.trim()) return;
+    
+    setLinkingLoading(true);
+    await updateProfile({
+      name,
+      phone,
+      linkedGmail: inputGmail.trim(),
+    });
+    setEmail(inputGmail.trim());
+    setLinkingLoading(false);
+    setShowLinkModal(false);
+    setInputGmail("");
+  };
+
+  const handleUnlinkGmail = async () => {
+    setEmail("");
+    await updateProfile({
+      name,
+      phone,
+      linkedGmail: undefined,
+    });
   };
 
   const toggleNotif = (key: keyof typeof notifications) =>
@@ -122,16 +241,72 @@ export default function SettingsPage() {
             </div>
             <div>
               <p className="font-syne font-bold text-white mb-0.5">{name || "Student"}</p>
-              <p className="text-xs text-gray-500 font-space-mono">ID: 21201045 · B.Sc. CSE</p>
+              <p className="text-xs text-gray-500 font-space-mono">
+                ID: {studentId || "—"} · {department} · Sem {semester} · Sec {section} · Batch {batch}
+              </p>
               <button className="text-xs text-neon mt-2 hover:underline">Change avatar</button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InputField label="Full Name" value={name} onChange={setName} placeholder="Your name" />
-            <InputField label="Student ID" value="21201045" onChange={() => {}} placeholder="Student ID" />
-            <InputField label="Email" value={email} onChange={setEmail} type="email" placeholder="your@email.com" />
+            <InputField label="Student ID" value={studentId} onChange={() => {}} placeholder="Student ID" readOnly />
+            <div>
+              <label className="block text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">Email</label>
+              {email ? (
+                <div className="relative flex items-center">
+                  <input
+                    type="email"
+                    value={email}
+                    readOnly
+                    className="w-full rounded-2xl py-3 pl-4 pr-24 text-sm text-white placeholder-gray-600 focus:outline-none opacity-90 cursor-default"
+                    style={{
+                      background: "#0b0b0e",
+                      boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUnlinkGmail}
+                    className="absolute right-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all font-syne"
+                  >
+                    Unlink
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowLinkModal(true)}
+                  className="w-full rounded-2xl py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2 text-space-950 transition-all duration-300 hover:scale-[1.01] font-syne animate-pulse"
+                  style={{
+                    background: "linear-gradient(90deg, #a3e635 0%, #6ee7b7 100%)",
+                    boxShadow: "0 4px 12px rgba(163,230,53,0.15)",
+                  }}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.48 1 0 6.48 0 13s5.48 12 12.24 12c7.06 0 11.758-4.967 11.758-11.96 0-.807-.087-1.427-.193-1.755H12.24z"/>
+                  </svg>
+                  Link Google Account
+                </button>
+              )}
+            </div>
             <InputField label="Phone" value={phone} onChange={setPhone} placeholder="+880-xxx-xxx-xxx" />
+            <SelectField
+              label="Semester"
+              value={semester}
+              onChange={(v) => {
+                const sem = Number(v);
+                setSemester(sem);
+                setBatch(50 - sem);
+              }}
+              options={SEMESTER_OPTIONS}
+            />
+            <SelectField
+              label="Section"
+              value={section}
+              onChange={setSection}
+              options={SECTION_OPTIONS}
+            />
           </div>
         </SectionCard>
 
@@ -199,6 +374,85 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Gmail Linking Modal */}
+      {showLinkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-md rounded-[32px] p-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
+            style={{
+              background: "#121216",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.8), inset -6px -6px 12px rgba(0,0,0,0.7), inset 3px 3px 6px rgba(255,255,255,0.04)",
+              border: "1px solid rgba(163,230,53,0.1)",
+            }}
+          >
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                style={{
+                  background: "rgba(163,230,53,0.1)",
+                  border: "1px solid rgba(163,230,53,0.15)",
+                }}
+              >
+                <svg className="w-6 h-6 text-neon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.48 1 0 6.48 0 13s5.48 12 12.24 12c7.06 0 11.758-4.967 11.758-11.96 0-.807-.087-1.427-.193-1.755H12.24z"/>
+                </svg>
+              </div>
+              <h3 className="font-syne font-bold text-lg text-white">Link Google Account</h3>
+              <p className="text-xs text-gray-500 mt-1">Connect your personal Gmail with your PUC Account</p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleLinkGmail} className="space-y-4">
+              <div>
+                <label className="block text-[10px] text-gray-500 mb-2 font-semibold uppercase tracking-wider">
+                  Personal Gmail Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={inputGmail}
+                  onChange={(e) => setInputGmail(e.target.value)}
+                  placeholder="username@gmail.com"
+                  className="w-full rounded-2xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-neon/30 transition-all bg-[#0b0b0e]"
+                  style={{
+                    boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLinkModal(false);
+                    setInputGmail("");
+                  }}
+                  className="flex-1 py-3 rounded-2xl text-xs font-semibold text-gray-400 hover:text-white transition-all bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.04] font-syne"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={linkingLoading}
+                  className="flex-1 py-3 rounded-2xl text-xs font-semibold text-space-950 transition-all duration-300 font-syne flex items-center justify-center gap-2"
+                  style={{
+                    background: "#a3e635",
+                    boxShadow: "0 4px 12px rgba(163,230,53,0.2)",
+                  }}
+                >
+                  {linkingLoading ? (
+                    <span className="w-4 h-4 border-2 border-space-950 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    "Authorize"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

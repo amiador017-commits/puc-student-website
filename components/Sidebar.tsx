@@ -12,12 +12,10 @@ import {
   User,
   Search,
   X,
-  Menu,
   LogOut,
 } from "lucide-react";
-import { useState } from "react";
 import { useSession } from "../lib/useSession";
-import { clearSession } from "../lib/auth";
+import { createClient } from "../lib/supabase";
 
 const PRIMARY_NAV = [
   { href: "/",          label: "Overview",  icon: LayoutDashboard },
@@ -27,7 +25,7 @@ const PRIMARY_NAV = [
 ];
 
 const SECONDARY_NAV = [
-  { href: "/messages",  label: "Messages",  icon: Mail            },
+  { href: "/contact-admin", label: "Contact Admin", icon: Mail            },
   { href: "/settings",  label: "Settings",  icon: Settings        },
   { href: "/help",      label: "Help",      icon: HelpCircle      },
 ];
@@ -42,8 +40,18 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const user = useSession();
 
-  const handleLogout = () => {
-    clearSession();
+  const handleLogout = async () => {
+    // 1. Clear custom session cookie
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Failed to clear custom session:", e);
+    }
+
+    // 2. Sign out of Supabase
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    
     router.push("/login");
   };
 

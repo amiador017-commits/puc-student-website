@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import { Menu, Bell, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getSession } from "../lib/auth";
+import { createClient } from "../lib/supabase";
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -12,23 +12,60 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const router = useRouter();
 
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname?.startsWith("/auth");
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) {
-      if (!isAuthPage) {
-        router.push("/login");
-      } else {
-        setLoading(false);
+    const supabase = createClient();
+    let active = true;
+
+    async function checkAuth(sbSessionInput?: any) {
+      // 1. Get/Verify Supabase Session
+      let sbSession = sbSessionInput;
+      if (sbSession === undefined) {
+        const { data } = await supabase.auth.getSession();
+        sbSession = data.session;
       }
-    } else {
-      if (isAuthPage) {
-        router.push("/");
+
+      // 2. Get/Verify Custom JWT Session
+      let customSession = null;
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          customSession = await res.json();
+        }
+      } catch (err) {
+        console.error("Failed to check custom session:", err);
+      }
+
+      if (!active) return;
+
+      const isAuthenticated = !!sbSession || !!customSession;
+
+      if (!isAuthenticated) {
+        if (!isAuthPage) {
+          router.push("/login");
+        } else {
+          setLoading(false);
+        }
       } else {
-        setLoading(false);
+        if (isAuthPage) {
+          router.push("/");
+        } else {
+          setLoading(false);
+        }
       }
     }
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      checkAuth(session);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [pathname, isAuthPage, router]);
 
   if (isAuthPage && !loading) {

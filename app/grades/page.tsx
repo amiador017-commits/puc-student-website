@@ -1,7 +1,10 @@
 "use client";
-import { useState } from "react";
-import { COURSES, SEMESTERS, calculateGPA, getLetterGrade } from "../../lib/mockData";
+import { useState, useEffect } from "react";
+import { SEMESTERS, calculateGPA, getLetterGrade, getCourseTotalAndMax, type Course, mapDbRowsToCourses } from "../../lib/mockData";
 import { TrendingUp, Award } from "lucide-react";
+import { createClient } from "../../lib/supabase";
+import { useSession } from "../../lib/useSession";
+import { getCoursesWithGrades } from "../../lib/grades";
 
 function SemesterButton({ sem, active, onClick }: { sem: number; active: boolean; onClick: () => void }) {
   return (
@@ -29,10 +32,34 @@ function letterColor(letter: string) {
 }
 
 export default function GradesPage() {
-  const [selectedSemester, setSelectedSemester] = useState(8);
-  const semCourses = COURSES.filter((c) => c.semester === selectedSemester);
+  const [selectedSemester, setSelectedSemester] = useState(1);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const session = useSession();
+
+  useEffect(() => {
+    if (!session) return;
+
+    setSelectedSemester(session.semester);
+
+    const supabase = createClient();
+
+    async function fetchData() {
+      const [{ data: courseRows }, { data: componentRows }] = await Promise.all([
+        supabase.from("courses").select("course_id, code, name, semester, credits, instructor"),
+        supabase.from("course_assessment_components").select("course_id, component_key, label, max_marks"),
+      ]);
+
+      const mapped = mapDbRowsToCourses(courseRows ?? [], componentRows ?? []);
+      const withGrades = await getCoursesWithGrades(session.studentId, mapped);
+      setCourses(withGrades);
+    }
+
+    fetchData();
+  }, [session?.studentId]);
+
+  const semCourses = courses.filter((c) => c.semester === selectedSemester);
   const semGPA = calculateGPA(semCourses);
-  const cgpa = calculateGPA(COURSES);
+  const cgpa = calculateGPA(courses);
 
   return (
     <div className="p-6 md:p-8">
@@ -47,7 +74,7 @@ export default function GradesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
         {[
           { label: "Semester GPA", value: semGPA.toFixed(2), sub: `Semester ${selectedSemester}`, icon: <TrendingUp size={16} /> },
-          { label: "Cumulative GPA", value: cgpa.toFixed(2), sub: "All 8 semesters", icon: <Award size={16} /> },
+          { label: "Cumulative GPA", value: cgpa.toFixed(2), sub: "All semesters", icon: <Award size={16} /> },
         ].map((card) => (
           <div
             key={card.label}
@@ -116,34 +143,97 @@ export default function GradesPage() {
               </tr>
             </thead>
             <tbody>
-              {semCourses.map((c, i) => {
+              {semCourses.map((c) => {
                 const letter = getLetterGrade(c);
-                const total = c.grades.midterm + c.grades.final;
-                const max = c.grades.midtermMax + c.grades.finalMax;
-                const pct = Math.round((total / max) * 100);
+                const { total, max } = getCourseTotalAndMax(c);
+                const pct = max > 0 ? Math.round((total / max) * 100) : 0;
                 const lc = letterColor(letter);
+
+                // Midterm and Final displays
+                let midtermDisplay = "—";
+                let finalDisplay = "—";
+                
+                if (c.assessmentComponents) {
+                  const midComp = c.assessmentComponents.find((comp) => comp.key === "midterm");
+                  if (midComp) {
+                    midtermDisplay = `${c.grades.midterm}/${midComp.max}`;
+                  }
+                  const finComp = c.assessmentComponents.find((comp) => comp.key === "final");
+                  if (finComp) {
+                    finalDisplay = `${c.grades.final}/${finComp.max}`;
+                  }
+                } else {
+                  midtermDisplay = `${c.grades.midterm}/${c.grades.midtermMax}`;
+                  finalDisplay = `${c.grades.final}/${c.grades.finalMax}`;
+                }
+
+                // Attendance display
+                let attendancePct = 0;
+                let hasAttendance = false;
+                if (c.assessmentComponents) {
+                  const attComp = c.assessmentComponents.find((comp) => comp.key === "attendance");
+                  if (attComp) {
+                    const attVal = c.grades.attendance ?? 0;
+                    attendancePct = attComp.max > 0 ? Math.round((attVal / attComp.max) * 100) : 0;
+                    hasAttendance = true;
+                  }
+                } else {
+                  attendancePct = c.grades.attendance;
+                  hasAttendance = true;
+                }
+
                 return (
                   <tr
                     key={c.courseId}
                     className="border-b border-white/[0.03] hover:bg-white/[0.015] transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <span
-                        className="text-[10px] font-space-mono font-bold px-2.5 py-1 rounded-lg"
-                        style={{ color: "#a3e635", background: "rgba(163,230,53,0.1)", border: "1px solid rgba(163,230,53,0.15)" }}
-                      >
-                        {c.code}
-                      </span>
+                      {(() => {
+                        const [prefix, ...suffixParts] = c.code.split(" ");
+                        const formattedPrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1).toLowerCase();
+                        const suffix = suffixParts.join(" ");
+                        return (
+                          <div
+                            className="inline-flex flex-col items-center justify-center rounded-xl px-3.5 py-1.5 font-space-mono text-center min-w-[80px]"
+                            style={{
+                              background: "rgba(163,230,53,0.06)",
+                              border: "1px solid rgba(163,230,53,0.15)",
+                              boxShadow: "inset 1px 1px 2px rgba(255,255,255,0.1), inset -2px -2px 4px rgba(0,0,0,0.5), 0 4px 10px rgba(163,230,53,0.05)",
+                            }}
+                          >
+                            <span className="text-[10px] font-bold tracking-wider" style={{ color: "#a3e635" }}>
+                              {formattedPrefix}
+                            </span>
+                            {suffix && (
+                              <span className="text-[9px] font-bold mt-0.5" style={{ color: "#a3e635", opacity: 0.8 }}>
+                                {suffix}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-200 font-medium">{c.name}</td>
                     <td className="px-6 py-4 text-sm font-space-mono text-gray-400">{c.credits}</td>
                     <td className="px-6 py-4">
-                      <span className="font-space-mono text-sm text-white">{c.grades.midterm}</span>
-                      <span className="text-gray-600 text-xs">/{c.grades.midtermMax}</span>
+                      {midtermDisplay !== "—" ? (
+                        <>
+                          <span className="font-space-mono text-sm text-white">{midtermDisplay.split('/')[0]}</span>
+                          <span className="text-gray-600 text-xs">/{midtermDisplay.split('/')[1]}</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-600 font-space-mono text-sm">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-space-mono text-sm text-white">{c.grades.final}</span>
-                      <span className="text-gray-600 text-xs">/{c.grades.finalMax}</span>
+                      {finalDisplay !== "—" ? (
+                        <>
+                          <span className="font-space-mono text-sm text-white">{finalDisplay.split('/')[0]}</span>
+                          <span className="text-gray-600 text-xs">/{finalDisplay.split('/')[1]}</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-600 font-space-mono text-sm">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -162,13 +252,17 @@ export default function GradesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`text-sm font-space-mono font-bold ${
-                          c.grades.attendance >= 90 ? "text-neon" : c.grades.attendance >= 75 ? "text-amber-400" : "text-red-400"
-                        }`}
-                      >
-                        {c.grades.attendance}%
-                      </span>
+                      {hasAttendance ? (
+                        <span
+                          className={`text-sm font-space-mono font-bold ${
+                            attendancePct >= 90 ? "text-neon" : attendancePct >= 75 ? "text-amber-400" : "text-red-400"
+                          }`}
+                        >
+                          {attendancePct}%
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 font-space-mono text-sm">—</span>
+                      )}
                     </td>
                   </tr>
                 );

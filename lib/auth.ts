@@ -1,62 +1,8 @@
-// ─── Auth Storage Layer ────────────────────────────────────────────────────
-// Uses localStorage for client-side persistence.
-// One account per 16-digit Student ID — enforced at registration.
-
-export interface StoredUser {
-  studentId: string;
-  name: string;
-  phone?: string;
-  semester: number;
-  section: string;
-  department: string;
-  batch: number;
-  passwordHash: string; // simple Base64 encoding (not real hashing — demo only)
-  createdAt: string;
-}
-
-const USERS_KEY = "puc_users";
-const SESSION_KEY = "puc_session";
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Very lightweight obfuscation for demo purposes */
-function encodePassword(password: string): string {
-  return btoa(password);
-}
-
-function verifyPassword(password: string, hash: string): boolean {
-  return btoa(password) === hash;
-}
-
-function getUsers(): StoredUser[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) ?? "[]") as StoredUser[];
-  } catch {
-    return [];
-  }
-}
-
-function saveUsers(users: StoredUser[]): void {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-// ── Validation ────────────────────────────────────────────────────────────────
-
-/**
- * Returns true when the student ID is exactly 16 numeric digits.
- */
 export function isValidStudentId(id: string): boolean {
   return /^\d{16}$/.test(id.trim());
 }
 
-// ── Registration ──────────────────────────────────────────────────────────────
-
-export type RegisterResult =
-  | { success: true; user: StoredUser }
-  | { success: false; error: string };
-
-export function register(params: {
+export async function register(params: {
   studentId: string;
   name: string;
   phone?: string;
@@ -64,95 +10,95 @@ export function register(params: {
   section: string;
   department: string;
   password: string;
-}): RegisterResult {
-  const { studentId, name, phone, semester, section, department, password } =
-    params;
+}): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
 
-  const trimmedId = studentId.trim();
+    const data = await res.json();
 
-  // 1. Validate Student ID format (16 digits)
-  if (!isValidStudentId(trimmedId)) {
-    return { success: false, error: "Invalid" };
+    if (!res.ok) {
+      if (res.status === 409) {
+        return { success: false, error: data.error || "An account with this Student ID already exists." };
+      }
+      return { success: false, error: data.error || "Registration failed." };
+    }
+
+    return { success: true };
+  } catch {
+    return { success: false, error: "Something went wrong. Please try again." };
   }
-
-  const users = getUsers();
-
-  // 2. Check for duplicate Student ID
-  if (users.some((u) => u.studentId === trimmedId)) {
-    return {
-      success: false,
-      error: "An account with this Student ID already exists.",
-    };
-  }
-
-  // 3. Create and persist new user
-  const newUser: StoredUser = {
-    studentId: trimmedId,
-    name: name.trim(),
-    phone: phone?.trim() || undefined,
-    semester,
-    section,
-    department,
-    batch: 50 - semester,
-    passwordHash: encodePassword(password),
-    createdAt: new Date().toISOString(),
-  };
-
-  users.push(newUser);
-  saveUsers(users);
-
-  return { success: true, user: newUser };
 }
 
-// ── Login ─────────────────────────────────────────────────────────────────────
-
-export type LoginResult =
-  | { success: true; user: StoredUser }
-  | { success: false; error: string };
-
-export function login(params: {
+export async function login(params: {
   studentId: string;
   password: string;
-}): LoginResult {
-  const trimmedId = params.studentId.trim();
-
-  // 1. Validate format first
-  if (!isValidStudentId(trimmedId)) {
-    return { success: false, error: "Invalid" };
-  }
-
-  const users = getUsers();
-
-  // 2. Find user
-  const user = users.find((u) => u.studentId === trimmedId);
-  if (!user) {
-    return { success: false, error: "No account found with this Student ID." };
-  }
-
-  // 3. Check password
-  if (!verifyPassword(params.password, user.passwordHash)) {
-    return { success: false, error: "Incorrect password." };
-  }
-
-  return { success: true, user };
-}
-
-// ── Session ───────────────────────────────────────────────────────────────────
-
-export function setSession(user: StoredUser): void {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-}
-
-export function getSession(): StoredUser | null {
-  if (typeof window === "undefined") return null;
+}): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as StoredUser) : null;
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { success: false, error: data.error || "Incorrect Student ID or password." };
+    }
+
+    return { success: true };
+  } catch {
+    return { success: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+export async function logout(): Promise<void> {
+  await fetch("/api/auth/logout", { method: "POST" });
+}
+
+export async function getSession() {
+  try {
+    const res = await fetch("/api/auth/session");
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
     return null;
   }
 }
 
-export function clearSession(): void {
-  localStorage.removeItem(SESSION_KEY);
+export async function googleLogin() {
+  const { createClient } = await import("./supabase");
+  const supabase = createClient();
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/google/callback`,
+    },
+  });
 }
+
+export async function updateProfile(params: {
+  name: string;
+  phone?: string;
+  linkedGmail?: string;
+  semester?: number;
+  section?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/auth/update-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.error };
+    return { success: true };
+  } catch {
+    return { success: false, error: "Something went wrong." };
+  }
+}
+

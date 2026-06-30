@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Syne, DM_Sans, Space_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
 import DashboardShell from "../components/DashboardShell";
 
-const syne = Syne({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-syne",
+  variable: "--font-plus-jakarta",
   display: "swap",
 });
 
@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${dmSans.variable} ${spaceMono.variable}`}
+      className={`${plusJakartaSans.variable} ${dmSans.variable} ${spaceMono.variable}`}
     >
       <body className="antialiased min-h-screen bg-space-950 text-foreground">
         <DashboardShell>{children}</DashboardShell>

@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import CourseCard from "../../components/CourseCard";
-import { COURSES, SEMESTERS } from "../../lib/mockData";
+import { SEMESTERS, calculateGPA, type Course, mapDbRowsToCourses } from "../../lib/mockData";
 import { Search, SlidersHorizontal } from "lucide-react";
-import { getSession } from "../../lib/auth";
+import { createClient } from "../../lib/supabase";
+import { useSession } from "../../lib/useSession";
+import { getCoursesWithGrades } from "../../lib/grades";
 
 function SemesterButton({
   sem,
@@ -40,16 +42,45 @@ function SemesterButton({
 export default function CoursesPage() {
   const [selectedSemester, setSelectedSemester] = useState(1);
   const [search, setSearch] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const session = useSession();
 
-  // Pre-select the semester the student enrolled in
   useEffect(() => {
-    const session = getSession();
-    if (session?.semester) {
-      setSelectedSemester(session.semester);
-    }
-  }, []);
+    if (!session) return;
 
-  const filtered = COURSES.filter(
+    setSelectedSemester(session.semester);
+
+    const supabase = createClient();
+
+    async function fetchData() {
+      const [{ data: courseRows }, { data: componentRows }] = await Promise.all([
+        supabase.from("courses").select("course_id, code, name, semester, credits, instructor"),
+        supabase.from("course_assessment_components").select("course_id, component_key, label, max_marks"),
+      ]);
+
+      const mapped = mapDbRowsToCourses(courseRows ?? [], componentRows ?? []);
+      const withGrades = await getCoursesWithGrades(session.studentId, mapped);
+      setCourses(withGrades);
+    }
+
+    fetchData();
+  }, [session?.studentId]);
+
+  const refreshCourses = async () => {
+    if (!session?.studentId) return;
+    const supabase = createClient();
+
+    const [{ data: courseRows }, { data: componentRows }] = await Promise.all([
+      supabase.from("courses").select("course_id, code, name, semester, credits, instructor"),
+      supabase.from("course_assessment_components").select("course_id, component_key, label, max_marks"),
+    ]);
+
+    const mapped = mapDbRowsToCourses(courseRows ?? [], componentRows ?? []);
+    const withGrades = await getCoursesWithGrades(session.studentId, mapped);
+    setCourses(withGrades);
+  };
+
+  const filtered = courses.filter(
     (c) =>
       c.semester === selectedSemester &&
       (search === "" ||
@@ -57,14 +88,42 @@ export default function CoursesPage() {
         c.code.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const semesterCourses = courses.filter((c) => c.semester === selectedSemester);
+  const semesterGPA = calculateGPA(semesterCourses);
+
+  const studentSemester = session?.semester || 1;
+  const cumulativeCourses = courses.filter((c) => c.semester <= studentSemester);
+  const cumulativeCGPA = calculateGPA(cumulativeCourses);
+
   return (
     <div className="p-6 md:p-8">
       {/* Header */}
-      <header className="mb-8">
-        <p className="text-xs text-gray-600 mb-1 font-space-mono tracking-widest uppercase">Dashboards / Courses</p>
-        <h1 className="text-2xl font-syne font-bold text-white">Courses</h1>
-        <p className="text-sm text-gray-500 mt-1">Browse and filter courses by semester</p>
-      </header>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+          <p className="text-xs text-gray-600 mb-1 font-space-mono tracking-widest uppercase">Dashboards / Courses</p>
+          <h1 className="text-2xl font-syne font-bold text-white">Courses</h1>
+          <p className="text-sm text-gray-500 mt-1">Browse and filter courses by semester</p>
+        </div>
+
+        {/* CGPA display card */}
+        <div 
+          className="flex items-center gap-6 px-6 py-4 rounded-[22px] border border-white/[0.04]"
+          style={{
+            background: "#1c1c22",
+            boxShadow: "8px 8px 24px rgba(0,0,0,0.55), inset -4px -4px 8px rgba(0,0,0,0.65), inset 2px 2px 4px rgba(255,255,255,0.06)",
+          }}
+        >
+          <div className="text-left">
+            <p className="text-[9px] uppercase tracking-widest text-gray-500 font-semibold mb-0.5">Semester {selectedSemester} GPA</p>
+            <p className="font-space-mono text-xl font-bold text-neon">{semesterGPA.toFixed(2)}</p>
+          </div>
+          <div className="h-8 w-px bg-white/[0.08]" />
+          <div className="text-left">
+            <p className="text-[9px] uppercase tracking-widest text-gray-500 font-semibold mb-0.5">Total CGPA</p>
+            <p className="font-space-mono text-xl font-bold text-white">{cumulativeCGPA.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
 
       {/* Semester filter row */}
       <section
@@ -129,7 +188,7 @@ export default function CoursesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((course) => (
-            <CourseCard key={course.courseId} course={course} />
+            <CourseCard key={course.courseId} course={course} onGradesUpdate={refreshCourses} />
           ))}
         </div>
       )}

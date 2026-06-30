@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Bell, BookOpen, Award, Megaphone, MessageSquare } from "lucide-react";
-import { NOTIFICATIONS, type Notification } from "../lib/mockData";
+import { type Notification } from "../lib/mockData";
+import { createClient } from "../lib/supabase";
+import { useSession } from "../lib/useSession";
 
 const TYPE_CONFIG: Record<Notification["type"], { icon: React.ElementType; color: string; bg: string }> = {
   assignment:   { icon: BookOpen,      color: "text-neon",    bg: "bg-neon/15 border-neon/20"        },
@@ -11,9 +13,35 @@ const TYPE_CONFIG: Record<Notification["type"], { icon: React.ElementType; color
 };
 
 export default function NotificationsPanel() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const session = useSession();
 
-  const visible = NOTIFICATIONS.filter((n) => !dismissed.has(n.id));
+  useEffect(() => {
+    if (!session?.studentId) return;
+
+    const supabase = createClient();
+    supabase
+      .from("notifications")
+      .select("id, type, title, body, created_at")
+      .eq("student_id", session.studentId)
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (!data) return;
+        setNotifications(
+          data.map((n: { id: string; type: string; title: string; body: string; created_at: string }) => ({
+            id: n.id,
+            type: n.type as Notification["type"],
+            title: n.title,
+            body: n.body,
+            time: new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }))
+        );
+      });
+  }, [session?.studentId]);
+
+  const visible = notifications.filter((n) => !dismissed.has(n.id));
 
   const dismiss = (id: string) => {
     setDismissed((prev) => new Set([...prev, id]));
@@ -31,7 +59,7 @@ export default function NotificationsPanel() {
           )}
           {visible.length > 0 && (
             <button
-              onClick={() => setDismissed(new Set(NOTIFICATIONS.map((n) => n.id)))}
+              onClick={() => setDismissed(new Set(notifications.map((n) => n.id)))}
               className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
             >
               Clear all
