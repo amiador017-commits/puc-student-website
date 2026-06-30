@@ -158,7 +158,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
       }
 
       setSuccess(`Registration successful for Batch ${calculatedBatch}! Redirecting...`);
-      setTimeout(() => router.push("/"), 1400);
+      setTimeout(() => { window.location.href = "/"; }, 1400);
     } else {
       const result = await login({
         studentId: studentId.trim(),
@@ -178,7 +178,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
       }
 
       setSuccess("Logged in successfully! Redirecting...");
-      setTimeout(() => router.push("/"), 1400);
+      setTimeout(() => { window.location.href = "/"; }, 1400);
     }
   };
 
