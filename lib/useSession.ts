@@ -1,23 +1,20 @@
 ﻿"use client";
 import { useEffect, useState } from "react";
 import { createClient } from "./supabase";
+import { useSessionContext } from "./session-context";
+import type { SessionUser } from "./server-session";
 
-export interface SessionUser {
-  studentId: string;
-  name: string;
-  phone?: string;
-  semester: number;
-  section: string;
-  department: string;
-  batch: number;
-  linkedGmail?: string;
-  email?: string;
-}
+export { type SessionUser };
 
 export function useSession(): SessionUser | null {
-  const [user, setUser] = useState<SessionUser | null>(null);
+  const contextUser = useSessionContext();
+  const [user, setUser] = useState<SessionUser | null>(contextUser);
 
   useEffect(() => {
+    if (contextUser) {
+      setUser(contextUser);
+      return;
+    }
     // Try loading from custom JWT first (student ID + password auth)
     async function loadFromCustomJwt() {
       try {

@@ -1,44 +1,38 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, DM_Sans, Space_Mono } from "next/font/google";
+import { Space_Mono } from "next/font/google";
 import "./globals.css";
 import DashboardShell from "../components/DashboardShell";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
+import SmoothScroll from "../components/SmoothScroll";
+import { getServerSession } from "../lib/server-session";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-space-mono",
   display: "swap",
-});
+  });
 
 export const metadata: Metadata = {
   title: "PUC Student Portal",
   description: "Your personal academic dashboard — courses, grades, schedule, and more.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getServerSession();
+
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${dmSans.variable} ${spaceMono.variable}`}
+      className={`${spaceMono.variable}`}
     >
       <body className="antialiased min-h-screen bg-space-950 text-foreground">
-        <DashboardShell>{children}</DashboardShell>
+        <SmoothScroll>
+          <DashboardShell user={user}>{children}</DashboardShell>
+        </SmoothScroll>
       </body>
     </html>
   );
