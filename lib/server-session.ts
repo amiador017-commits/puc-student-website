@@ -15,11 +15,12 @@ export type SessionUser = {
   email?: string;
 };
 
-const getCachedProfile = unstable_cache(
-  async (studentId: string) => getStudentProfile(studentId),
-  ["student_profile"],
-  { revalidate: 300, tags: ["student_profile"] }
-);
+const getCachedProfile = (studentId: string) =>
+  unstable_cache(
+    async () => getStudentProfile(studentId),
+    ["student_profile", studentId],
+    { revalidate: 300, tags: [`student_profile_${studentId}`] }
+  )();
 
 export const getServerSession = cache(async (): Promise<SessionUser | null> => {
   const cookieStore = await cookies();
