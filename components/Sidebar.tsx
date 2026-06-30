@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ReactLenis } from "lenis/react";
 import {
   LayoutDashboard,
   BookOpen,
@@ -138,25 +139,30 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Primary nav */}
-        <div className="px-3 flex-1 overflow-y-auto">
-          <p className="text-[10px] font-semibold text-gray-600 mb-2.5 px-3 uppercase tracking-widest">
-            Dashboards
-          </p>
-          <nav className="space-y-1 mb-8">
-            {PRIMARY_NAV.map((item) => (
-              <NavItem key={item.href} {...item} />
-            ))}
-          </nav>
+        <ReactLenis
+          options={{ lerp: 0.08, duration: 1.2 }}
+          className="px-3 flex-1 min-h-0 overflow-y-auto"
+        >
+          <div>
+            <p className="text-[10px] font-semibold text-gray-600 mb-2.5 px-3 uppercase tracking-widest">
+              Dashboards
+            </p>
+            <nav className="space-y-1 mb-8">
+              {PRIMARY_NAV.map((item) => (
+                <NavItem key={item.href} {...item} />
+              ))}
+            </nav>
 
-          <p className="text-[10px] font-semibold text-gray-600 mb-2.5 px-3 uppercase tracking-widest">
-            Account
-          </p>
-          <nav className="space-y-1">
-            {SECONDARY_NAV.map((item) => (
-              <NavItem key={item.href} {...item} />
-            ))}
-          </nav>
-        </div>
+            <p className="text-[10px] font-semibold text-gray-600 mb-2.5 px-3 uppercase tracking-widest">
+              Account
+            </p>
+            <nav className="space-y-1">
+              {SECONDARY_NAV.map((item) => (
+                <NavItem key={item.href} {...item} />
+              ))}
+            </nav>
+          </div>
+        </ReactLenis>
 
         {/* User card */}
         <div className="px-4 py-5 mt-auto">

@@ -32,6 +32,17 @@ function letterColor(letter: string) {
   return "#f87171";
 }
 
+function getShortName(name: string): string {
+  const ignore = ["and", "of", "to", "in", "for", "with", "a", "an", "the", "&"];
+  return name
+    .split(/\s+/)
+    .filter((word) => !ignore.includes(word.toLowerCase()))
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+}
+
+
 export default function GradesClient({
   initialUser,
   initialCourses,
@@ -123,28 +134,28 @@ export default function GradesClient({
   const cgpa = calculateGPA(courses);
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-4 md:p-8">
       <header className="mb-8">
         <p className="text-xs text-gray-600 mb-1 font-space-mono tracking-widest uppercase">Dashboards / Grades</p>
         <h1 className="text-2xl font-syne font-bold text-white">Grades</h1>
         <p className="text-sm text-gray-500 mt-1">Academic performance across all semesters</p>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 gap-5 mb-8">
         {[
           { label: "Semester GPA", value: semGPA.toFixed(2), sub: `Semester ${selectedSemester}`, icon: <TrendingUp size={16} /> },
           { label: "Cumulative GPA", value: cgpa.toFixed(2), sub: "All semesters", icon: <Award size={16} /> },
         ].map((card) => (
           <div
             key={card.label}
-            className="p-5 rounded-[26px] flex items-center gap-5"
+            className="p-4 sm:p-5 rounded-[26px] flex flex-col justify-between aspect-square sm:aspect-auto sm:flex-row sm:items-center sm:justify-start gap-4 sm:gap-5"
             style={{
               background: "#1c1c22",
               boxShadow: "8px 8px 24px rgba(0,0,0,0.55), inset -6px -6px 12px rgba(0,0,0,0.65), inset 3px 3px 6px rgba(255,255,255,0.06)",
             }}
           >
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-neon shrink-0"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-neon shrink-0"
               style={{
                 background: "rgba(163,230,53,0.1)",
                 boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
@@ -153,9 +164,9 @@ export default function GradesClient({
               {card.icon}
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1">{card.label}</p>
-              <p className="font-space-mono text-3xl font-bold text-white">{card.value}</p>
-              <p className="text-xs text-gray-600 mt-0.5">{card.sub}</p>
+              <p className="text-[8px] sm:text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-0.5 sm:mb-1 leading-tight">{card.label}</p>
+              <p className="font-space-mono text-xl sm:text-3xl font-bold text-white leading-none">{card.value}</p>
+              <p className="text-[9px] sm:text-xs text-gray-600 mt-1 leading-none">{card.sub}</p>
             </div>
           </div>
         ))}
@@ -324,14 +335,14 @@ export default function GradesClient({
           </div>
         ) : (
           <>
-            <div className="p-6 space-y-4">
-              <div className="hidden lg:grid grid-cols-[120px_1fr_80px_160px_90px_100px] gap-4 px-5 pb-3.5 text-[10px] uppercase tracking-widest text-gray-500 font-semibold border-b border-white/[0.04]">
-                <div>Course Code</div>
-                <div>Course Name</div>
-                <div className="text-center">Credits</div>
-                <div>Total Score</div>
-                <div className="text-center">Grade</div>
-                <div className="text-center">Attendance</div>
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="grid grid-cols-[75px_1fr_25px_95px] lg:grid-cols-[120px_1fr_80px_160px_90px_100px] gap-3 lg:gap-4 px-4 lg:px-5 pb-3.5 text-[9px] lg:text-[10px] uppercase tracking-widest text-gray-500 font-semibold border-b border-white/[0.04]">
+                <div className="text-center lg:text-left">Code</div>
+                <div className="text-left">Name</div>
+                <div className="text-center">Cr</div>
+                <div className="text-left">Total</div>
+                <div className="hidden lg:block text-center">Grade</div>
+                <div className="hidden lg:block text-center">Attendance</div>
               </div>
 
               {semCourses.map((c) => {
@@ -357,50 +368,47 @@ export default function GradesClient({
                 return (
                   <div
                     key={c.courseId}
-                    className="grid grid-cols-1 lg:grid-cols-[120px_1fr_80px_160px_90px_100px] items-center gap-4 px-5 py-4 rounded-[22px] border border-transparent transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(163,230,53,0.04)]"
+                    className="grid grid-cols-[75px_1fr_25px_95px] lg:grid-cols-[120px_1fr_80px_160px_90px_100px] items-center gap-3 lg:gap-4 px-4 lg:px-5 py-3 lg:py-4 rounded-[22px] border border-transparent transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(163,230,53,0.04)]"
                     style={{
                       background: "#1c1c22",
                       boxShadow: "6px 6px 18px rgba(0,0,0,0.45), inset -4px -4px 8px rgba(0,0,0,0.55), inset 2px 2px 4px rgba(255,255,255,0.05)",
                     }}
                   >
-                    <div className="flex lg:block items-center justify-between">
-                      <span className="lg:hidden text-[10px] uppercase tracking-wider text-gray-500 font-medium">Code</span>
+                    <div className="flex justify-center lg:justify-start w-full">
                       {(() => {
                         const [prefix, ...suffixParts] = c.code.split(" ");
                         const formattedPrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1).toLowerCase();
                         const suffix = suffixParts.join(" ");
                         return (
                           <div
-                            className="inline-flex flex-col items-center justify-center rounded-xl px-3.5 py-1.5 font-space-mono text-center min-w-[80px]"
+                            className="inline-flex flex-col items-center justify-center rounded-xl px-2 lg:px-3.5 py-1 lg:py-1.5 font-space-mono text-center min-w-[60px] lg:min-w-[80px]"
                             style={{
                               background: "rgba(163,230,53,0.06)",
                               border: "1px solid rgba(163,230,53,0.15)",
                               boxShadow: "inset 1px 1px 2px rgba(255,255,255,0.1), inset -2px -2px 4px rgba(0,0,0,0.5), 0 4px 10px rgba(163,230,53,0.05)",
                             }}
                           >
-                            <span className="text-[10px] font-bold tracking-wider" style={{ color: "#a3e635" }}>{formattedPrefix}</span>
-                            {suffix && <span className="text-[9px] font-bold mt-0.5" style={{ color: "#a3e635", opacity: 0.8 }}>{suffix}</span>}
+                            <span className="text-[9px] lg:text-[10px] font-bold tracking-wider" style={{ color: "#a3e635" }}>{formattedPrefix}</span>
+                            {suffix && <span className="text-[7px] lg:text-[9px] font-bold mt-0.5" style={{ color: "#a3e635", opacity: 0.8 }}>{suffix}</span>}
                           </div>
                         );
                       })()}
                     </div>
 
-                    <div className="flex lg:block items-center justify-between border-t border-white/[0.02] pt-2 lg:pt-0 lg:border-none">
-                      <span className="lg:hidden text-[10px] uppercase tracking-wider text-gray-500 font-medium">Name</span>
-                      <span className="text-sm text-gray-200 font-medium text-right lg:text-left">{c.name}</span>
+                    <div className="text-left">
+                      <span className="lg:hidden text-xs text-gray-200 font-bold">{getShortName(c.name)}</span>
+                      <span className="hidden lg:inline text-sm text-gray-200 font-medium">{c.name}</span>
                     </div>
 
-                    <div className="flex lg:block items-center justify-between border-t border-white/[0.02] pt-2 lg:pt-0 lg:border-none">
-                      <span className="lg:hidden text-[10px] uppercase tracking-wider text-gray-500 font-medium">Credits</span>
-                      <span className="text-sm font-space-mono text-gray-400 block w-full lg:text-center">{c.credits}</span>
+                    <div className="text-center">
+                      <span className="text-xs lg:text-sm font-space-mono text-gray-400">{c.credits}</span>
                     </div>
 
-                    <div className="flex lg:block items-center justify-between border-t border-white/[0.02] pt-2 lg:pt-0 lg:border-none">
-                      <span className="lg:hidden text-[10px] uppercase tracking-wider text-gray-500 font-medium">Total</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-space-mono text-sm text-white font-bold">{pct}%</span>
+                    <div className="text-left">
+                      <div className="flex items-center justify-start gap-1.5 lg:gap-2">
+                        <span className="font-space-mono text-xs lg:text-sm text-white font-bold">{pct}%</span>
                         <div
-                          className="w-16 h-1.5 rounded-full overflow-hidden"
+                          className="w-12 lg:w-16 h-1.5 rounded-full overflow-hidden"
                           style={{
                             background: "rgba(0,0,0,0.4)",
                             boxShadow: "inset 1px 1px 2px rgba(0,0,0,0.5), inset -1px -1px 2px rgba(255,255,255,0.02)"
@@ -414,29 +422,23 @@ export default function GradesClient({
                       </div>
                     </div>
 
-                    <div className="flex lg:block items-center justify-between border-t border-white/[0.02] pt-2 lg:pt-0 lg:border-none">
-                      <span className="lg:hidden text-[10px] uppercase tracking-wider text-gray-500 font-medium">Grade</span>
-                      <div className="lg:text-center w-full">
-                        <span
-                          className="text-xs font-space-mono font-bold px-3 py-1 rounded-xl shadow-[inset_-1.5px_-1.5px_3px_rgba(0,0,0,0.25),_inset_1px_1px_2px_rgba(255,255,255,0.15)] border select-none"
-                          style={{ color: lc, background: `${lc}18`, borderColor: `${lc}35` }}
-                        >
-                          {letter}
-                        </span>
-                      </div>
+                    <div className="hidden lg:block lg:text-center w-full">
+                      <span
+                        className="text-xs font-space-mono font-bold px-3 py-1 rounded-xl shadow-[inset_-1.5px_-1.5px_3px_rgba(0,0,0,0.25),_inset_1px_1px_2px_rgba(255,255,255,0.15)] border select-none"
+                        style={{ color: lc, background: `${lc}18`, borderColor: `${lc}35` }}
+                      >
+                        {letter}
+                      </span>
                     </div>
 
-                    <div className="flex lg:block items-center justify-between border-t border-white/[0.02] pt-2 lg:pt-0 lg:border-none">
-                      <span className="lg:hidden text-[10px] uppercase tracking-wider text-gray-500 font-medium">Attendance</span>
-                      <div className="lg:text-center w-full">
-                        {hasAttendance ? (
-                          <span className={`text-sm font-space-mono font-bold ${attendancePct >= 90 ? "text-neon" : attendancePct >= 75 ? "text-amber-400" : "text-red-400"}`}>
-                            {attendancePct}%
-                          </span>
-                        ) : (
-                          <span className="text-gray-600 font-space-mono text-sm">—</span>
-                        )}
-                      </div>
+                    <div className="hidden lg:block lg:text-center w-full">
+                      {hasAttendance ? (
+                        <span className={`text-sm font-space-mono font-bold ${attendancePct >= 90 ? "text-neon" : attendancePct >= 75 ? "text-amber-400" : "text-red-400"}`}>
+                          {attendancePct}%
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 font-space-mono text-sm">—</span>
+                      )}
                     </div>
                   </div>
                 );

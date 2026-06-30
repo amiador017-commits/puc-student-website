@@ -82,6 +82,7 @@ export async function getCoursesWithGrades(
           ...course.grades,
           ...custom,
         },
+        hasSavedGrades: true,
       };
     }
     return course;

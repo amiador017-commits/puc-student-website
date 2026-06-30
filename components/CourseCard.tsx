@@ -321,7 +321,7 @@ export default function CourseCard({ course, onGradesUpdate }: Props) {
             </div>
 
             {/* Inputs Form */}
-            <form onSubmit={handleSave} className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <form onSubmit={handleSave} data-lenis-prevent className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {course.assessmentComponents && course.assessmentComponents.length > 0 ? (
                 course.assessmentComponents.map((comp) => (
                   <div key={comp.key}>

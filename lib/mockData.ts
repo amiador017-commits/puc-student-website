@@ -22,6 +22,7 @@ export interface Course {
     [key: string]: number | undefined;
   };
   assessmentComponents?: AssessmentComponent[];
+  hasSavedGrades?: boolean;
 }
 
 export interface Notification {

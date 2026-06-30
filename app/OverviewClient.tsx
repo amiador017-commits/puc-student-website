@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Award,
   BookOpen,
@@ -14,15 +14,16 @@ import {
   AlertTriangle,
   RotateCcw,
   Layers,
+  X,
 } from "lucide-react";
 import CourseCard from "../components/CourseCard";
 import NotificationsPanel from "../components/NotificationsPanel";
-import { SEMESTERS, calculateGPA, getCourseTotalAndMax, type Course, mapDbRowsToCourses } from "../lib/mockData";
+import { SEMESTERS, calculateGPA, getCourseTotalAndMax, type Course, mapDbRowsToCourses, getLetterGrade } from "../lib/mockData";
 import { createClient } from "../lib/supabase";
 import { useSession } from "../lib/useSession";
 import { getCoursesWithGrades } from "../lib/grades";
 import type { SessionUser } from "../lib/server-session";
-
+ 
 function StatCard({
   title,
   value,
@@ -40,16 +41,16 @@ function StatCard({
 }) {
   return (
     <div
-      className="p-5 rounded-[26px] relative overflow-hidden"
+      className="p-3 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden"
       style={{
         background: "#1c1c22",
         boxShadow: "8px 8px 24px rgba(0,0,0,0.55), inset -6px -6px 12px rgba(0,0,0,0.65), inset 3px 3px 6px rgba(255,255,255,0.06)",
       }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold">{title}</p>
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <p className="text-[9px] sm:text-xs text-gray-500 uppercase tracking-widest font-semibold truncate mr-1">{title}</p>
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center text-neon"
+          className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center text-neon shrink-0 [&_svg]:w-3.5 [&_svg]:h-3.5 sm:[&_svg]:w-4 sm:[&_svg]:h-4"
           style={{
             background: "rgba(163,230,53,0.1)",
             boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
@@ -58,11 +59,11 @@ function StatCard({
           {icon}
         </div>
       </div>
-      <p className="font-space-mono text-3xl font-bold text-white mb-1">{value}</p>
-      <p className="text-xs text-gray-500 mb-3">{subtitle}</p>
-      <div className={`flex items-center gap-1 text-[11px] font-medium ${trendDown ? "text-red-400" : "text-neon"}`}>
-        <TrendingUp size={11} className={trendDown ? "rotate-180" : ""} />
-        <span>{trend}</span>
+      <p className="font-space-mono text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-1">{value}</p>
+      <p className="text-[9px] sm:text-xs text-gray-500 mb-1.5 sm:mb-3 truncate">{subtitle}</p>
+      <div className={`flex items-center gap-1 text-[8px] sm:text-[11px] font-medium ${trendDown ? "text-red-400" : "text-neon"}`}>
+        <TrendingUp size={10} className={trendDown ? "rotate-180" : ""} />
+        <span className="truncate">{trend}</span>
       </div>
     </div>
   );
@@ -75,6 +76,7 @@ function AcademicCard({
   icon,
   glowColor = "rgba(163,230,53,0.1)",
   iconColor = "text-neon",
+  onClick,
 }: {
   title: string;
   value: string;
@@ -82,20 +84,28 @@ function AcademicCard({
   icon: React.ReactNode;
   glowColor?: string;
   iconColor?: string;
+  onClick?: () => void;
 }) {
+  const isClickable = !!onClick;
   return (
     <div
-      className="p-5 rounded-[26px] relative overflow-hidden flex flex-col justify-between min-h-[140px]"
+      onClick={onClick}
+      className={`p-3 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden flex flex-col justify-between min-h-[110px] sm:min-h-[140px] ${
+        isClickable
+          ? "cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+          : ""
+      }`}
       style={{
         background: "#1c1c22",
         boxShadow: "8px 8px 24px rgba(0,0,0,0.55), inset -6px -6px 12px rgba(0,0,0,0.65), inset 3px 3px 6px rgba(255,255,255,0.06)",
+        ...(isClickable ? { border: "1px solid rgba(255,255,255,0.02)" } : {}),
       }}
     >
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{title}</p>
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <p className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest font-semibold truncate mr-1">{title}</p>
           <div
-            className={`w-8 h-8 rounded-xl flex items-center justify-center ${iconColor}`}
+            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${iconColor} [&_svg]:w-3.5 [&_svg]:h-3.5 sm:[&_svg]:w-4 sm:[&_svg]:h-4`}
             style={{
               background: glowColor,
               boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
@@ -104,9 +114,9 @@ function AcademicCard({
             {icon}
           </div>
         </div>
-        <p className="font-space-mono text-2xl font-bold text-white mb-1">{value}</p>
+        <p className="font-space-mono text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1 truncate">{value}</p>
       </div>
-      <div className="text-xs text-gray-500 font-medium truncate mt-2">{subtitle}</div>
+      <div className="text-[10px] sm:text-xs text-gray-500 font-medium truncate mt-1 sm:mt-2">{subtitle}</div>
     </div>
   );
 }
@@ -155,7 +165,43 @@ export default function OverviewClient({
   const [selectedSemester, setSelectedSemester] = useState(1);
   const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [dataFetched, setDataFetched] = useState(initialCourses.length > 0);
+  const [showBestModal, setShowBestModal] = useState(false);
+  const [showWorstModal, setShowWorstModal] = useState(false);
   const session = useSession();
+
+  const scrollTarget = useRef(0);
+  const scrollAnimFrame = useRef<number | null>(null);
+
+  const handleSmoothWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    if (scrollAnimFrame.current === null) {
+      scrollTarget.current = container.scrollTop;
+    }
+    scrollTarget.current = Math.max(
+      0,
+      Math.min(
+        container.scrollHeight - container.clientHeight,
+        scrollTarget.current + e.deltaY
+      )
+    );
+    e.preventDefault();
+
+    const animate = () => {
+      const current = container.scrollTop;
+      const diff = scrollTarget.current - current;
+      if (Math.abs(diff) > 0.5) {
+        container.scrollTop = current + diff * 0.12; // 12% lerp for momentum glide
+        scrollAnimFrame.current = requestAnimationFrame(animate);
+      } else {
+        container.scrollTop = scrollTarget.current;
+        scrollAnimFrame.current = null;
+      }
+    };
+
+    if (scrollAnimFrame.current === null) {
+      scrollAnimFrame.current = requestAnimationFrame(animate);
+    }
+  };
 
   useEffect(() => {
     if (dataFetched || !session) return;
@@ -242,21 +288,23 @@ export default function OverviewClient({
     ? Math.round(ongoingCourses.reduce((acc, c) => acc + (c.grades.attendance || 0), 0) / ongoingCourses.length)
     : 0;
 
-  const coursePerformance = courses
-    .map((c) => {
+  const getBestAndWorstForSemester = (sem: number) => {
+    const semCourses = courses.filter((c) => c.semester === sem && c.hasSavedGrades);
+    if (semCourses.length === 0) return { best: null, worst: null };
+
+    const perf = semCourses.map((c) => {
       const { total, max } = getCourseTotalAndMax(c);
       const pct = max > 0 ? (total / max) * 100 : 0;
-      return { course: c, pct, max };
-    })
-    .filter((cp) => cp.max > 0);
+      return { course: c, pct };
+    });
 
-  const bestCourse = coursePerformance.length > 0
-    ? coursePerformance.reduce((prev, curr) => (curr.pct > prev.pct ? curr : prev)).course
-    : null;
+    const best = perf.reduce((prev, curr) => (curr.pct > prev.pct ? curr : prev)).course;
+    const worst = perf.reduce((prev, curr) => (curr.pct < prev.pct ? curr : prev)).course;
 
-  const worstCourse = coursePerformance.length > 0
-    ? coursePerformance.reduce((prev, curr) => (curr.pct < prev.pct ? curr : prev)).course
-    : null;
+    return { best, worst };
+  };
+
+  const { best: bestCourse, worst: worstCourse } = getBestAndWorstForSemester(S);
 
   const retakeCourses = courses.filter((c) => selectedRetakeIds.includes(c.courseId));
   const recourseCourses = courses.filter((c) => selectedRecourseIds.includes(c.courseId));
@@ -274,7 +322,7 @@ export default function OverviewClient({
           )}
         </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <section className="grid grid-cols-3 gap-2 sm:gap-5">
           <StatCard
             title="On Going Sem's CGPA"
             icon={<Award size={16} />}
@@ -304,7 +352,7 @@ export default function OverviewClient({
             <h2 className="font-syne font-bold text-white text-lg">Academic Insights</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             <AcademicCard
               title="Total Credits"
               value={String(totalCredits)}
@@ -336,6 +384,7 @@ export default function OverviewClient({
               icon={<Trophy size={16} />}
               glowColor="rgba(163,230,53,0.1)"
               iconColor="text-neon"
+              onClick={() => setShowBestModal(true)}
             />
             <AcademicCard
               title="Worst Performing"
@@ -344,6 +393,7 @@ export default function OverviewClient({
               icon={<AlertTriangle size={16} />}
               glowColor="rgba(249,115,22,0.1)"
               iconColor="text-orange-400"
+              onClick={() => setShowWorstModal(true)}
             />
             <AcademicCard
               title="Recourse Courses"
@@ -367,6 +417,114 @@ export default function OverviewClient({
       >
         <NotificationsPanel />
       </aside>
+
+      {/* History Modal */}
+      {(showBestModal || showWorstModal) && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 cursor-default animate-fade-in"
+          onClick={() => {
+            setShowBestModal(false);
+            setShowWorstModal(false);
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-[32px] p-6 text-left relative overflow-hidden border border-white/[0.05]"
+            style={{
+              background: "#121216",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-syne font-bold text-white">
+                  {showBestModal ? "Best Performing Courses" : "Worst Performing Courses"}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Historical performance history across semesters
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowBestModal(false);
+                  setShowWorstModal(false);
+                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  boxShadow: "inset -1px -1px 2px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div
+              data-lenis-prevent
+              onWheel={handleSmoothWheel}
+              className="space-y-3 max-h-[350px] overflow-y-auto pr-1"
+              style={{ overscrollBehavior: "contain" }}
+            >
+              {Array.from({ length: 8 }, (_, i) => i + 1).map((semNum) => {
+                const { best, worst } = getBestAndWorstForSemester(semNum);
+                const targetCourse = showBestModal ? best : worst;
+                
+                return (
+                  <div
+                    key={semNum}
+                    className="p-4 rounded-2xl flex items-center justify-between border border-white/[0.02]"
+                    style={{
+                      background: "#1c1c22",
+                      boxShadow: "4px 4px 12px rgba(0,0,0,0.3), inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.03)",
+                    }}
+                  >
+                    <div>
+                      <p className="text-[10px] font-space-mono text-neon font-bold uppercase tracking-wider">
+                        Semester {semNum}
+                      </p>
+                      {targetCourse ? (
+                        <div className="mt-1">
+                          <h4 className="text-sm font-syne font-bold text-white flex items-center gap-2">
+                            <span>{targetCourse.name}</span>
+                            <span className="text-xs font-mono font-normal text-gray-500">
+                              ({targetCourse.code})
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            Instructor: {targetCourse.instructor}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-600 mt-1 font-medium italic">
+                          No grades entered
+                        </p>
+                      )}
+                    </div>
+
+                    {targetCourse && (
+                      <div className="text-right">
+                        <span
+                          className="text-xs font-syne font-bold px-2.5 py-1 rounded-xl"
+                          style={{
+                            color: showBestModal ? "#a3e635" : "#f97316",
+                            background: showBestModal ? "rgba(163,230,53,0.1)" : "rgba(249,115,22,0.1)",
+                            border: showBestModal ? "1px solid rgba(163,230,53,0.2)" : "1px solid rgba(249,115,22,0.2)",
+                          }}
+                        >
+                          {getLetterGrade(targetCourse)}
+                        </span>
+                        <p className="text-[10px] font-space-mono text-gray-500 mt-2">
+                          {Math.round((getCourseTotalAndMax(targetCourse).total / getCourseTotalAndMax(targetCourse).max) * 100)}%
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

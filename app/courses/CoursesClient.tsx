@@ -20,7 +20,7 @@ function SemesterButton({
   return (
     <button
       onClick={onClick}
-      className={`px-5 py-2 rounded-2xl text-sm font-space-mono font-bold transition-all duration-200 ${
+      className={`px-2 md:px-5 py-2 rounded-2xl text-sm font-space-mono font-bold transition-all duration-200 w-full md:w-auto text-center ${
         active ? "text-space-950" : "text-gray-500 hover:text-gray-300"
       }`}
       style={
@@ -35,10 +35,12 @@ function SemesterButton({
             }
       }
     >
-      Semester {sem}
+      <span className="md:hidden">S{sem}</span>
+      <span className="hidden md:inline">Semester {sem}</span>
     </button>
   );
 }
+
 
 export default function CoursesClient({
   initialUser,
@@ -140,9 +142,9 @@ export default function CoursesClient({
         }}
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
+          <div className="w-full md:w-auto">
             <p className="text-xs text-gray-500 mb-3 uppercase tracking-widest font-semibold">Select Semester</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-4 gap-2 md:flex md:flex-wrap">
               {SEMESTERS.map((sem) => (
                 <SemesterButton
                   key={sem}
