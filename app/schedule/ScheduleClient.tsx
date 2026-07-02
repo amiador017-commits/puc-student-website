@@ -82,9 +82,10 @@ export default function ScheduleClient({
   const session = useSession();
 
   useEffect(() => {
-    if (dataFetched || !session) return;
+    if (!session) return;
     setSemLabel(`${ordinal(session.semester)} Semester`);
     setSectionLabel(`Section ${session.section}`);
+    if (dataFetched) return;
     const supabase = createClient();
     supabase
       .from("schedules")

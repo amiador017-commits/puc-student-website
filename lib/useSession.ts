@@ -68,10 +68,6 @@ export function useSession(): SessionUser | null {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user?.id) {
         loadFromSupabase();
-      } else {
-        loadFromCustomJwt().then((ok) => {
-          if (!ok) setUser(null);
-        });
       }
     });
 
