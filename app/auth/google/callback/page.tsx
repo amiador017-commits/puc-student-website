@@ -54,7 +54,11 @@ function CallbackHandler() {
 
       if (profile) {
         const res = await fetch("/api/auth/set-custom-session", { method: "POST" });
-        if (res.ok) window.location.href = "/";
+        if (res.ok) {
+          window.location.href = "/";
+        } else {
+          window.location.href = "/login?error=Failed to complete sign in. Please try again.";
+        }
         return;
       }
 

@@ -100,7 +100,10 @@ export default function DashboardShell({
       try {
         await Promise.race([doCheck, timeout]);
       } catch {
-        if (active) setLoading(false);
+        if (active) {
+          if (!isAuthPage && !localUser) router.push("/login");
+          else setLoading(false);
+        }
       }
     }
 
@@ -110,7 +113,7 @@ export default function DashboardShell({
       (_event, session) => {
         if (!active) return;
         if (session && isAuthPage) router.push("/");
-        else if (!session && !isAuthPage) router.push("/login");
+        else if (!session && !isAuthPage && !localUser) router.push("/login");
       }
     );
 
@@ -126,22 +129,12 @@ export default function DashboardShell({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-4">
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center animate-pulse"
-          style={{
-            background: "#a3e635",
-            boxShadow: "0 0 20px rgba(163,230,53,0.3)",
-          }}
-        >
-          <span className="font-syne font-black text-xl text-space-950 select-none">
-            P
-          </span>
+      <div className="min-h-screen bg-space-950 flex flex-col items-center justify-center gap-4">
+        <div className="w-14 h-14 rounded-clay-lg flex items-center justify-center bg-neon shadow-clay-neon">
+          <span className="font-syne font-black text-lg text-space-950 select-none">P</span>
         </div>
         <div className="flex flex-col items-center gap-2">
-          <h2 className="text-sm font-syne font-bold text-white tracking-wide">
-            Loading PUC Portal
-          </h2>
+          <h2 className="text-sm font-syne font-bold text-white tracking-wide">Loading PUC Portal</h2>
           <Loader2 className="animate-spin text-neon w-5 h-5" />
         </div>
       </div>
@@ -168,13 +161,8 @@ export default function DashboardShell({
             >
               <Menu size={20} />
             </button>
-            <span className="font-syne font-bold text-white text-sm">
-              PUC Portal
-            </span>
-            <Link
-              href="/"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
+            <span className="font-syne font-bold text-white text-sm">PUC Portal</span>
+            <Link href="/" className="text-gray-400 hover:text-white transition-colors">
               <Bell size={18} />
             </Link>
           </header>

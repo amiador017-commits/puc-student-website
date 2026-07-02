@@ -33,6 +33,10 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'An account with this Student ID already exists.');
   END IF;
 
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE user_id = v_user_id) THEN
+    RETURN json_build_object('success', false, 'error', 'You already have a profile linked to this account.');
+  END IF;
+
   v_batch := 50 - p_semester;
 
   INSERT INTO public.profiles (student_id, user_id, name, phone, semester, section, department, batch, linked_gmail)
@@ -111,9 +115,16 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'This Google account is already linked to another student.');
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE student_id = p_student_id AND user_id = v_user_id
+  ) THEN
+    RETURN json_build_object('success', false, 'error', 'You can only link your own account.');
+  END IF;
+
   UPDATE public.profiles
   SET user_id = v_user_id, linked_gmail = p_linked_gmail
-  WHERE student_id = p_student_id;
+  WHERE student_id = p_student_id AND user_id = v_user_id;
 
   RETURN json_build_object('success', true);
 END;

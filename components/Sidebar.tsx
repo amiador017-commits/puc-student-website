@@ -42,17 +42,9 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const user = useSession();
 
   const handleLogout = async () => {
-    // 1. Clear custom session cookie
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error("Failed to clear custom session:", e);
-    }
-
-    // 2. Sign out of Supabase
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
     const supabase = createClient();
     await supabase.auth.signOut();
-    
     router.push("/login");
   };
 
@@ -65,9 +57,9 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       <Link
         href={href}
         onClick={onClose}
-        className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl font-medium text-sm transition-all duration-200 ${
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-clay font-medium text-sm transition-all duration-200 ${
           active
-            ? "bg-neon text-space-950 shadow-[4px_4px_12px_rgba(163,230,53,0.25),inset_-3px_-3px_6px_rgba(0,0,0,0.35),inset_2px_2px_4px_rgba(255,255,255,0.5)] font-semibold"
+            ? "bg-neon text-space-950 shadow-clay-neon font-semibold"
             : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
         }`}
       >
@@ -79,15 +71,10 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black/60 z-30 lg:hidden" onClick={onClose} />
       )}
 
-      {/* Sidebar panel */}
       <aside
         className={`
           fixed top-0 left-0 h-screen w-64 z-40 flex flex-col
@@ -97,65 +84,41 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         `}
         style={{ background: "#0e0e11" }}
       >
-        {/* Brand */}
         <div className="flex items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{
-                background: "#a3e635",
-                boxShadow: "2px 2px 6px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.25), inset 1.5px 1.5px 3px rgba(255,255,255,0.5)",
-              }}
-            >
+            <div className="w-8 h-8 rounded-clay flex items-center justify-center shadow-clay-flat" style={{ background: "#a3e635" }}>
               <User size={16} className="text-space-950" />
             </div>
-            <span className="font-syne font-bold text-base text-white tracking-tight">
-              PUC Portal
-            </span>
+            <span className="font-syne font-bold text-base text-white tracking-tight">PUC Portal</span>
           </div>
-          {/* Mobile close */}
-          <button
-            onClick={onClose}
-            className="lg:hidden text-gray-500 hover:text-white transition-colors"
-          >
+          <button onClick={onClose} className="lg:hidden text-gray-500 hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        {/* Search */}
         <div className="px-4 mb-6">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
             <input
               type="text"
               placeholder="Search..."
-              className="w-full rounded-2xl py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none transition-all focus:ring-1 focus:ring-neon/30"
-              style={{
-                background: "#0b0b0e",
-                boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
-              }}
+              className="clay-input w-full py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none"
             />
           </div>
         </div>
 
-        {/* Primary nav */}
         <ReactLenis
           options={{ lerp: 0.08, duration: 1.2 }}
           className="px-3 flex-1 min-h-0 overflow-y-auto"
         >
           <div>
-            <p className="text-[10px] font-semibold text-gray-600 mb-2.5 px-3 uppercase tracking-widest">
-              Dashboards
-            </p>
+            <p className="section-label">Dashboards</p>
             <nav className="space-y-1 mb-8">
               {PRIMARY_NAV.map((item) => (
                 <NavItem key={item.href} {...item} />
               ))}
             </nav>
-
-            <p className="text-[10px] font-semibold text-gray-600 mb-2.5 px-3 uppercase tracking-widest">
-              Account
-            </p>
+            <p className="section-label">Account</p>
             <nav className="space-y-1">
               {SECONDARY_NAV.map((item) => (
                 <NavItem key={item.href} {...item} />
@@ -164,23 +127,10 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           </div>
         </ReactLenis>
 
-        {/* User card */}
         <div className="px-4 py-5 mt-auto">
-          <div
-            className="flex items-center justify-between p-3 rounded-2xl gap-2"
-            style={{
-              background: "#1c1c22",
-              boxShadow: "4px 4px 10px rgba(0,0,0,0.4), inset -3px -3px 6px rgba(0,0,0,0.5), inset 1.5px 1.5px 3px rgba(255,255,255,0.04)",
-            }}
-          >
+          <div className="flex items-center justify-between p-3 rounded-clay-lg gap-2 shadow-clay-flat" style={{ background: "#1c1c22" }}>
             <div className="flex items-center gap-3 min-w-0">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background: "#0b0b0e",
-                  boxShadow: "inset 2px 2px 4px rgba(0,0,0,0.5), inset -1px -1px 2px rgba(255,255,255,0.03)",
-                }}
-              >
+              <div className="w-9 h-9 rounded-clay flex items-center justify-center shrink-0 shadow-clay-inset" style={{ background: "#0b0b0e" }}>
                 <User size={15} className="text-gray-400" />
               </div>
               <div className="min-w-0">
@@ -197,10 +147,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               <button
                 onClick={handleLogout}
                 title="Log Out"
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 shrink-0 cursor-pointer"
-                style={{
-                  boxShadow: "inset 1px 1px 2px rgba(255,255,255,0.02)",
-                }}
+                className="w-8 h-8 rounded-clay flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 shrink-0 cursor-pointer"
               >
                 <LogOut size={16} />
               </button>

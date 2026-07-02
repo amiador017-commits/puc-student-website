@@ -9,16 +9,9 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
     <button
       onClick={() => onChange(!checked)}
       className={`relative w-10 h-5.5 rounded-full transition-all duration-300 flex items-center ${
-        checked ? "bg-neon" : ""
+        checked ? "bg-neon shadow-clay-neon" : "shadow-clay-inset"
       }`}
-      style={
-        checked
-          ? { background: "#a3e635", boxShadow: "0 0 8px rgba(163,230,53,0.3)" }
-          : {
-              background: "#0b0b0e",
-              boxShadow: "inset 2px 2px 4px rgba(0,0,0,0.6), inset -1.5px -1.5px 3px rgba(255,255,255,0.03)",
-            }
-      }
+      style={checked ? {} : { background: "#0b0b0e" }}
     >
       <span
         className={`absolute w-4 h-4 rounded-full transition-transform duration-300 ${
@@ -54,11 +47,7 @@ function InputField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         readOnly={readOnly}
-        className={`w-full rounded-2xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-neon/30 transition-all ${readOnly ? "opacity-60 cursor-default" : ""}`}
-        style={{
-          background: "#0b0b0e",
-          boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
-        }}
+        className={`clay-input w-full py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none transition-all ${readOnly ? "opacity-60 cursor-default" : ""}`}
       />
     </div>
   );
@@ -81,13 +70,12 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neon/30 transition-all bg-[#0b0b0e] appearance-none cursor-pointer"
+        className="clay-input w-full py-3 px-4 text-sm text-white focus:outline-none transition-all appearance-none cursor-pointer"
         style={{
           backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'right 16px center',
           backgroundSize: '16px',
-          boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
         }}
       >
         {options.map((opt) => (
@@ -122,13 +110,7 @@ const SECTION_OPTIONS = [
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-[26px] p-6"
-      style={{
-        background: "#121216",
-        boxShadow: "10px 10px 30px rgba(0,0,0,0.5), inset -6px -6px 12px rgba(0,0,0,0.7), inset 3px 3px 6px rgba(255,255,255,0.04)",
-      }}
-    >
+    <div className="shadow-clay-raised rounded-clay-xl p-6" style={{ background: "#121216" }}>
       <h2 className="font-syne font-bold text-white mb-5">{title}</h2>
       {children}
     </div>
@@ -159,7 +141,6 @@ export default function SettingsPage() {
       setSemester(session.semester);
       setSection(session.section);
       setBatch(session.batch);
-      // Keep blank until linked with a personal Gmail account
       setEmail(session.linkedGmail ?? "");
     }
   }, [session]);
@@ -168,9 +149,7 @@ export default function SettingsPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const linkError = params.get("linkError");
-      if (linkError) {
-        setErrorMsg(linkError);
-      }
+      if (linkError) setErrorMsg(linkError);
     }
   }, []);
 
@@ -185,27 +164,27 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setErrorMsg("");
-    
-    // Check if user is attempting to change password
     if (currentPassword || newPassword) {
       if (!currentPassword || !newPassword) {
         setErrorMsg("Please fill in both current and new password fields to change your password.");
         return;
       }
-      
-      const pwdRes = await fetch("/api/auth/update-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-      
-      const pwdData = await pwdRes.json();
-      if (!pwdRes.ok) {
-        setErrorMsg(pwdData.error || "Failed to update password.");
+      try {
+        const pwdRes = await fetch("/api/auth/update-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        const pwdData = await pwdRes.json();
+        if (!pwdRes.ok) {
+          setErrorMsg(pwdData.error || "Failed to update password.");
+          return;
+        }
+      } catch {
+        setErrorMsg("Failed to update password. Please try again.");
         return;
       }
     }
-
     const res = await updateProfile({
       name,
       phone,
@@ -213,15 +192,11 @@ export default function SettingsPage() {
       semester,
       section,
     });
-    
     if (res.success) {
       setSaved(true);
       setCurrentPassword("");
       setNewPassword("");
-      setTimeout(() => {
-        setSaved(false);
-        window.location.reload();
-      }, 1500);
+      setTimeout(() => { setSaved(false); window.location.reload(); }, 1500);
     } else {
       setErrorMsg(res.error || "Failed to update profile.");
     }
@@ -229,11 +204,7 @@ export default function SettingsPage() {
 
   const handleUnlinkGmail = async () => {
     setEmail("");
-    await updateProfile({
-      name,
-      phone,
-      linkedGmail: undefined,
-    });
+    await updateProfile({ name, phone, linkedGmail: undefined });
   };
 
   const toggleNotif = (key: keyof typeof notifications) =>
@@ -241,25 +212,15 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-3xl">
-      {/* Header */}
       <header className="mb-8">
-        <p className="text-xs text-gray-600 mb-1 font-space-mono tracking-widest uppercase">Account / Settings</p>
-        <h1 className="text-2xl font-syne font-bold text-white">Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage your profile and preferences</p>
+        <h1 className="page-title-lg">Settings</h1>
+        <p className="page-subtitle">Manage your profile and preferences</p>
       </header>
 
       <div className="space-y-6">
-        {/* Avatar section */}
         <SectionCard title="Profile">
           <div className="flex items-center gap-5 mb-6">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
-              style={{
-                background: "rgba(163,230,53,0.1)",
-                boxShadow: "4px 4px 12px rgba(0,0,0,0.4), inset -3px -3px 6px rgba(0,0,0,0.4), inset 1.5px 1.5px 3px rgba(255,255,255,0.1)",
-                border: "1px solid rgba(163,230,53,0.15)",
-              }}
-            >
+            <div className="w-16 h-16 rounded-clay-lg flex items-center justify-center shrink-0 shadow-clay-flat" style={{ background: "rgba(163,230,53,0.1)", border: "1px solid rgba(163,230,53,0.15)" }}>
               <User size={28} className="text-neon" />
             </div>
             <div>
@@ -282,16 +243,12 @@ export default function SettingsPage() {
                     type="email"
                     value={email}
                     readOnly
-                    className="w-full rounded-2xl py-3 pl-4 pr-24 text-sm text-white placeholder-gray-600 focus:outline-none opacity-90 cursor-default"
-                    style={{
-                      background: "#0b0b0e",
-                      boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
-                    }}
+                    className="clay-input w-full py-3 pl-4 pr-24 text-sm text-white placeholder-gray-600 focus:outline-none opacity-90 cursor-default"
                   />
                   <button
                     type="button"
                     onClick={handleUnlinkGmail}
-                    className="absolute right-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all font-syne"
+                    className="absolute right-2 px-3 py-1.5 rounded-clay-sm text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all font-syne"
                   >
                     Unlink
                   </button>
@@ -300,17 +257,11 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={async () => {
-                    try {
-                      await googleLogin("link");
-                    } catch (e: any) {
-                      setErrorMsg(e?.message || "Failed to start Google sign-in. Please try again.");
-                    }
+                    try { await googleLogin("link"); }
+                    catch (e: any) { setErrorMsg(e?.message || "Failed to start Google sign-in. Please try again."); }
                   }}
-                  className="w-full rounded-2xl py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2 text-space-950 transition-all duration-300 hover:scale-[1.01] font-syne animate-pulse"
-                  style={{
-                    background: "linear-gradient(90deg, #a3e635 0%, #6ee7b7 100%)",
-                    boxShadow: "0 4px 12px rgba(163,230,53,0.15)",
-                  }}
+                  className="clay-btn w-full rounded-clay py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2 text-space-950 transition-all duration-300 hover:scale-[1.01] font-syne"
+                  style={{ background: "linear-gradient(90deg, #a3e635 0%, #6ee7b7 100%)" }}
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.48 1 0 6.48 0 13s5.48 12 12.24 12c7.06 0 11.758-4.967 11.758-11.96 0-.807-.087-1.427-.193-1.755H12.24z"/>
@@ -323,37 +274,26 @@ export default function SettingsPage() {
             <SelectField
               label="Semester"
               value={semester}
-              onChange={(v) => {
-                const sem = Number(v);
-                setSemester(sem);
-                setBatch(50 - sem);
-              }}
+              onChange={(v) => { const sem = Number(v); setSemester(sem); setBatch(50 - sem); }}
               options={SEMESTER_OPTIONS}
             />
-            <SelectField
-              label="Section"
-              value={section}
-              onChange={setSection}
-              options={SECTION_OPTIONS}
-            />
+            <SelectField label="Section" value={section} onChange={setSection} options={SECTION_OPTIONS} />
           </div>
         </SectionCard>
 
-        {/* Security */}
         <SectionCard title="Security">
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InputField label="Current Password" value={currentPassword} onChange={setCurrentPassword} type="password" placeholder="••••••••" />
               <InputField label="New Password" value={newPassword} onChange={setNewPassword} type="password" placeholder="••••••••" />
             </div>
-            <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "rgba(163,230,53,0.05)", border: "1px solid rgba(163,230,53,0.1)" }}>
+            <div className="flex items-center gap-3 p-4 rounded-clay-lg shadow-clay-inset" style={{ background: "rgba(163,230,53,0.05)", border: "1px solid rgba(163,230,53,0.1)" }}>
               <Shield size={15} className="text-neon" />
               <p className="text-xs text-gray-400">Two-factor authentication is <span className="text-neon font-semibold">enabled</span> for your account.</p>
             </div>
           </div>
         </SectionCard>
 
-        {/* Notification preferences */}
         <SectionCard title="Notification Preferences">
           <div className="space-y-4">
             {(
@@ -368,8 +308,7 @@ export default function SettingsPage() {
             ).map(({ key, label, desc, icon }) => (
               <div key={key} className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
                 <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center text-gray-500 mt-0.5 shrink-0"
-                    style={{ background: "#1c1c22", boxShadow: "inset 2px 2px 4px rgba(0,0,0,0.4), inset -1px -1px 2px rgba(255,255,255,0.04)" }}>
+                  <div className="w-7 h-7 rounded-clay-sm flex items-center justify-center text-gray-500 mt-0.5 shrink-0 shadow-clay-inset" style={{ background: "#1c1c22" }}>
                     {icon}
                   </div>
                   <div>
@@ -377,36 +316,26 @@ export default function SettingsPage() {
                     <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                   </div>
                 </div>
-                <ToggleSwitch
-                  checked={notifications[key]}
-                  onChange={() => toggleNotif(key)}
-                />
+                <ToggleSwitch checked={notifications[key]} onChange={() => toggleNotif(key)} />
               </div>
             ))}
           </div>
         </SectionCard>
 
-        {/* Save button */}
         <div className="flex items-center justify-end gap-4">
           {errorMsg && (
-            <p className="text-sm text-red-400 font-medium font-syne">{errorMsg}</p>
+            <p className="text-sm text-red-400 font-medium font-syne" role="alert">{errorMsg}</p>
           )}
           <button
             onClick={handleSave}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold font-syne transition-all duration-300 ${
-              saved ? "text-space-950" : "text-space-950"
-            }`}
-            style={{
-              background: saved ? "#6ee7b7" : "#a3e635",
-              boxShadow: "4px 4px 12px rgba(163,230,53,0.2), inset -2px -2px 4px rgba(0,0,0,0.3), inset 1.5px 1.5px 3px rgba(255,255,255,0.5)",
-            }}
+            className="clay-btn flex items-center gap-2 px-6 py-3 rounded-clay text-sm font-semibold font-syne text-space-950 transition-all duration-300"
+            style={{ background: saved ? "#6ee7b7" : "#a3e635" }}
           >
             {saved ? <Check size={16} /> : <Save size={16} />}
             {saved ? "Saved!" : "Save Changes"}
           </button>
         </div>
       </div>
-
     </div>
   );
 }

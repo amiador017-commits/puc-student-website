@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { currentPassword, newPassword } = body;
 
+    if (typeof currentPassword !== "string" || typeof newPassword !== "string") {
+      return NextResponse.json({ error: "Both current and new passwords are required." }, { status: 400 });
+    }
+
     if (!currentPassword || !newPassword) {
       return NextResponse.json({ error: "Both current and new passwords are required." }, { status: 400 });
     }

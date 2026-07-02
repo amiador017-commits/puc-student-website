@@ -70,12 +70,12 @@ export async function getSession() {
   }
 }
 
-export async function googleLogin(mode?: string) {
+export async function googleLogin(mode?: "link") {
   const { createClient } = await import("./supabase");
   const supabase = createClient();
-  const redirectTo = mode
-    ? `${window.location.origin}/auth/google/callback?mode=${mode}`
-    : `${window.location.origin}/auth/google/callback`;
+  const redirectUrl = new URL("/auth/google/callback", window.location.origin);
+  if (mode) redirectUrl.searchParams.set("mode", mode);
+  const redirectTo = redirectUrl.toString();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo },

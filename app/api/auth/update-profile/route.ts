@@ -35,12 +35,12 @@ export async function POST(request: NextRequest) {
           },
         }
       );
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("student_id")
-          .eq("user_id", session.user.id)
+          .eq("user_id", user.id)
           .single();
         if (profile) {
           studentId = profile.student_id;
@@ -53,16 +53,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone, linkedGmail, semester, section } = body;
+    const { name, phone, semester, section } = body;
 
-    console.log("UPDATE_PROFILE REQUEST:", {
-      studentId,
-      name,
-      phone,
-      linkedGmail,
-      semester,
-      section
-    });
+    console.log("UPDATE_PROFILE REQUEST");
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,7 +65,7 @@ export async function POST(request: NextRequest) {
       p_student_id: studentId,
       p_name: name ?? null,
       p_phone: phone ?? null,
-      p_linked_gmail: linkedGmail ?? null,
+      p_linked_gmail: null,
       p_semester: semester ?? null,
       p_section: section ?? null,
     });

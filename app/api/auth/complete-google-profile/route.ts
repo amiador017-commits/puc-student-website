@@ -24,9 +24,9 @@ function supabaseFromRequest(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = supabaseFromRequest(request);
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Not authenticated with Google" }, { status: 401 });
     }
 
@@ -37,11 +37,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (typeof studentId !== "string" || typeof name !== "string") {
+      return NextResponse.json({ error: "Invalid input types" }, { status: 400 });
+    }
+
     if (!/^\d{16}$/.test(studentId.trim())) {
       return NextResponse.json({ error: "Invalid Student ID format" }, { status: 400 });
     }
 
-    const googleEmail = session.user.email || "";
+    if (typeof semester !== "number" || semester < 1 || semester > 8) {
+      return NextResponse.json({ error: "Invalid semester" }, { status: 400 });
+    }
+
+    if (typeof section !== "string" || !/^[A-F]$/.test(section)) {
+      return NextResponse.json({ error: "Invalid section" }, { status: 400 });
+    }
+
+    const googleEmail = user.email || "";
 
     const { data, error } = await supabase.rpc("create_google_student_profile", {
       p_student_id: studentId.trim(),

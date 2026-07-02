@@ -286,14 +286,13 @@ on conflict (id) do update set
   phone = excluded.phone,
   whatsapp_url = excluded.whatsapp_url;
 
+SELECT setval(pg_get_serial_sequence('public.admins', 'id'), GREATEST((SELECT MAX(id) FROM public.admins), 1));
+
 -- Class Reps
-insert into public.class_reps (id, semester, section, name, phone, whatsapp_url)
-overriding system value
+insert into public.class_reps (semester, section, name, phone, whatsapp_url)
 values
-  (1, 2, 'A', 'Avijit Chakraborty', '+880 1816-360078', 'https://wa.me/8801816360078')
-on conflict (id) do update set
-  semester = excluded.semester,
-  section = excluded.section,
+  (2, 'A', 'Avijit Chakraborty', '+880 1816-360078', 'https://wa.me/8801816360078')
+on conflict (semester, section) do update set
   name = excluded.name,
   phone = excluded.phone,
   whatsapp_url = excluded.whatsapp_url;
