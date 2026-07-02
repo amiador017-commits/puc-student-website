@@ -55,6 +55,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, phone, semester, section } = body;
 
+    const trimmedName = name == null ? null : typeof name === "string" ? name.trim() : undefined;
+    const trimmedPhone = phone == null || phone === "" ? null : typeof phone === "string" ? phone.trim() : undefined;
+    const normalizedSemester = semester == null ? null : Number(semester);
+    const trimmedSection = section == null ? null : typeof section === "string" ? section.trim() : undefined;
+
+    if (
+      trimmedName === undefined ||
+      trimmedPhone === undefined ||
+      trimmedSection === undefined ||
+      (trimmedName !== null && !trimmedName) ||
+      (normalizedSemester !== null && (!Number.isInteger(normalizedSemester) || normalizedSemester < 1 || normalizedSemester > 8)) ||
+      (trimmedSection !== null && !/^[A-F]$/.test(trimmedSection))
+    ) {
+      return NextResponse.json({ error: "Invalid profile fields" }, { status: 400 });
+    }
+
     console.log("UPDATE_PROFILE REQUEST");
 
     const supabase = createClient(
@@ -63,11 +79,11 @@ export async function POST(request: NextRequest) {
     );
     const { data, error } = await supabase.rpc("update_student_profile", {
       p_student_id: studentId,
-      p_name: name ?? null,
-      p_phone: phone ?? null,
+      p_name: trimmedName,
+      p_phone: trimmedPhone,
       p_linked_gmail: null,
-      p_semester: semester ?? null,
-      p_section: section ?? null,
+      p_semester: normalizedSemester,
+      p_section: trimmedSection,
     });
 
     console.log("UPDATE_PROFILE RPC RESPONSE:", { data, error });

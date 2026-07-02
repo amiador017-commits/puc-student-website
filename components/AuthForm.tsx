@@ -437,7 +437,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !!success}
                 className="clay-btn w-full py-3.5 mt-2 rounded-clay text-xs font-space-mono font-bold uppercase tracking-wider text-space-950 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: "#a3e635" }}
               >

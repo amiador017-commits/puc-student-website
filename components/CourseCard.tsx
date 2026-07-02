@@ -71,6 +71,12 @@ function ClaySelect({ value, max, onChange }: ClaySelectProps) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setIsOpen(false);
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsOpen((o) => !o); }
+        }}
         className="clay-input w-full flex justify-between items-center py-2.5 px-4 text-sm text-white font-space-mono focus:outline-none cursor-pointer select-none"
       >
         <span>{displayValue}</span>
@@ -80,6 +86,7 @@ function ClaySelect({ value, max, onChange }: ClaySelectProps) {
       {isOpen && (
         <div
           data-dropdown-menu
+          role="listbox"
           className={`absolute left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-clay p-1.5 border border-white/[0.05] animate-fade-in ${
             dropdownPosition === "up" ? "bottom-full mb-2" : "top-full mt-2"
           }`}
@@ -98,6 +105,8 @@ function ClaySelect({ value, max, onChange }: ClaySelectProps) {
                 key={opt}
                 type="button"
                 ref={isSelected ? activeOptionRef : undefined}
+                role="option"
+                aria-selected={isSelected}
                 onClick={() => { onChange(opt); setIsOpen(false); }}
                 className={`w-full text-left py-1.5 px-3 rounded-clay-sm text-xs font-space-mono transition-all ${
                   isSelected

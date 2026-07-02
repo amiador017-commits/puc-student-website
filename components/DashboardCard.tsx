@@ -7,7 +7,7 @@ export default function DashboardCard({ title, icon, value, subtitle, trend, tre
           {icon}
         </div>
         <span className="font-syne font-semibold text-xs text-gray-400 uppercase tracking-wider block">{title}</span>
-        <div className="text-3.5xl font-space-mono text-white font-bold mt-1.5 flex items-baseline gap-2">
+        <div className="text-3xl font-space-mono text-white font-bold mt-1.5 flex items-baseline gap-2">
           {value}
         </div>
       </div>

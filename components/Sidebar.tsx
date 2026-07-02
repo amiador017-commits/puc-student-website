@@ -42,10 +42,14 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const user = useSession();
 
   const handleLogout = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (res.ok) {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/login");
+      }
+    } catch {}
   };
 
   const isActive = (href: string) =>
