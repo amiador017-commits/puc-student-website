@@ -276,14 +276,26 @@ insert into public.sections (section) values ('A'), ('B'), ('C'), ('D'), ('E'), 
 on conflict (section) do nothing;
 
 -- Admin
-insert into public.admins (name, role, phone, whatsapp_url) values
-  ('Anurag Baura Ador', 'Admin', '+8801568031212', 'https://wa.me/8801568031212')
-on conflict (id) do nothing;
+insert into public.admins (id, name, role, phone, whatsapp_url)
+overriding system value
+values
+  (1, 'Anurag Barua Ador', 'B.Sc. in CSE ( PUC )', '+880 1568-031212', 'https://wa.me/8801568031212')
+on conflict (id) do update set
+  name = excluded.name,
+  role = excluded.role,
+  phone = excluded.phone,
+  whatsapp_url = excluded.whatsapp_url;
+
+SELECT setval(pg_get_serial_sequence('public.admins', 'id'), GREATEST((SELECT MAX(id) FROM public.admins), 1));
 
 -- Class Reps
-insert into public.class_reps (semester, section, name, phone, whatsapp_url) values
+insert into public.class_reps (semester, section, name, phone, whatsapp_url)
+values
   (2, 'A', 'Avijit Chakraborty', '+880 1816-360078', 'https://wa.me/8801816360078')
-on conflict (semester, section) do nothing;
+on conflict (semester, section) do update set
+  name = excluded.name,
+  phone = excluded.phone,
+  whatsapp_url = excluded.whatsapp_url;
 
 -- ============================================================
 -- 8. CUSTOM UTILITY FUNCTIONS / RPCS

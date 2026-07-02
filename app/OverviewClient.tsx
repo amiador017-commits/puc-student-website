@@ -18,12 +18,13 @@ import {
 } from "lucide-react";
 import CourseCard from "../components/CourseCard";
 import NotificationsPanel from "../components/NotificationsPanel";
+import CircularProgressCard from "../components/CircularProgressCard";
 import { SEMESTERS, calculateGPA, getCourseTotalAndMax, type Course, mapDbRowsToCourses, getLetterGrade } from "../lib/mockData";
 import { createClient } from "../lib/supabase";
 import { useSession } from "../lib/useSession";
 import { getCoursesWithGrades } from "../lib/grades";
 import type { SessionUser } from "../lib/server-session";
- 
+
 function StatCard({
   title,
   value,
@@ -40,28 +41,15 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div
-      className="p-3 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden"
-      style={{
-        background: "#1c1c22",
-        boxShadow: "8px 8px 24px rgba(0,0,0,0.55), inset -6px -6px 12px rgba(0,0,0,0.65), inset 3px 3px 6px rgba(255,255,255,0.06)",
-      }}
-    >
-      <div className="flex items-center justify-between mb-2 sm:mb-4">
-        <p className="text-[9px] sm:text-xs text-gray-500 uppercase tracking-widest font-semibold truncate mr-1">{title}</p>
-        <div
-          className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center text-neon shrink-0 [&_svg]:w-3.5 [&_svg]:h-3.5 sm:[&_svg]:w-4 sm:[&_svg]:h-4"
-          style={{
-            background: "rgba(163,230,53,0.1)",
-            boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
-          }}
-        >
-          {icon}
-        </div>
+    <div className="clay-card p-2.5 sm:p-5 rounded-clay-xl relative overflow-hidden flex flex-col justify-between aspect-square">
+      <div className="text-center sm:text-left">
+        <p className="text-[8px] sm:text-xs text-gray-500 uppercase tracking-widest font-semibold truncate">{title}</p>
       </div>
-      <p className="font-space-mono text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-1">{value}</p>
-      <p className="text-[9px] sm:text-xs text-gray-500 mb-1.5 sm:mb-3 truncate">{subtitle}</p>
-      <div className={`flex items-center gap-1 text-[8px] sm:text-[11px] font-medium ${trendDown ? "text-red-400" : "text-neon"}`}>
+      <div className="flex flex-col items-center sm:items-start my-auto">
+        <p className="font-space-mono text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-1 leading-none">{value}</p>
+        <p className="text-[8px] sm:text-xs text-gray-500 truncate w-full text-center sm:text-left">{subtitle}</p>
+      </div>
+      <div className={`flex items-center justify-center sm:justify-start gap-1 text-[8px] sm:text-[11px] font-medium ${trendDown ? "text-red-400" : "text-neon"}`}>
         <TrendingUp size={10} className={trendDown ? "rotate-180" : ""} />
         <span className="truncate">{trend}</span>
       </div>
@@ -90,33 +78,17 @@ function AcademicCard({
   return (
     <div
       onClick={onClick}
-      className={`p-3 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden flex flex-col justify-between min-h-[110px] sm:min-h-[140px] ${
-        isClickable
-          ? "cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]"
-          : ""
+      className={`clay-card p-2.5 sm:p-5 rounded-clay-xl relative overflow-hidden flex flex-col justify-between aspect-square ${
+        isClickable ? "cursor-pointer hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,255,255,0.04)]" : ""
       }`}
-      style={{
-        background: "#1c1c22",
-        boxShadow: "8px 8px 24px rgba(0,0,0,0.55), inset -6px -6px 12px rgba(0,0,0,0.65), inset 3px 3px 6px rgba(255,255,255,0.06)",
-        ...(isClickable ? { border: "1px solid rgba(255,255,255,0.02)" } : {}),
-      }}
     >
-      <div>
-        <div className="flex items-center justify-between mb-2 sm:mb-3">
-          <p className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest font-semibold truncate mr-1">{title}</p>
-          <div
-            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${iconColor} [&_svg]:w-3.5 [&_svg]:h-3.5 sm:[&_svg]:w-4 sm:[&_svg]:h-4`}
-            style={{
-              background: glowColor,
-              boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
-            }}
-          >
-            {icon}
-          </div>
-        </div>
-        <p className="font-space-mono text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1 truncate">{value}</p>
+      <div className="text-center sm:text-left">
+        <p className="text-[8px] sm:text-xs text-gray-500 uppercase tracking-widest font-semibold truncate">{title}</p>
       </div>
-      <div className="text-[10px] sm:text-xs text-gray-500 font-medium truncate mt-1 sm:mt-2">{subtitle}</div>
+      <div className="flex flex-col items-center sm:items-start my-auto">
+        <p className="font-space-mono text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-1 leading-none">{value}</p>
+      </div>
+      <div className="text-[8px] sm:text-xs text-gray-500 truncate w-full text-center sm:text-left">{subtitle}</div>
     </div>
   );
 }
@@ -133,22 +105,11 @@ function SemesterPill({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-xl text-xs font-space-mono font-bold transition-all duration-200 ${
+      className={`px-4 py-1.5 rounded-clay text-xs font-space-mono font-bold transition-all duration-200 ${
         active
-          ? "text-space-950"
-          : "text-gray-500 hover:text-gray-300"
+          ? "text-space-950 bg-neon shadow-clay-neon"
+          : "text-gray-500 hover:text-gray-300 shadow-clay-inset"
       }`}
-      style={
-        active
-          ? {
-              background: "#a3e635",
-              boxShadow: "3px 3px 8px rgba(163,230,53,0.2), inset -2px -2px 4px rgba(0,0,0,0.3), inset 1.5px 1.5px 3px rgba(255,255,255,0.5)",
-            }
-          : {
-              background: "#0b0b0e",
-              boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.6), inset -1.5px -1.5px 3px rgba(255,255,255,0.03)",
-            }
-      }
     >
       S{sem}
     </button>
@@ -190,7 +151,7 @@ export default function OverviewClient({
       const current = container.scrollTop;
       const diff = scrollTarget.current - current;
       if (Math.abs(diff) > 0.5) {
-        container.scrollTop = current + diff * 0.12; // 12% lerp for momentum glide
+        container.scrollTop = current + diff * 0.12;
         scrollAnimFrame.current = requestAnimationFrame(animate);
       } else {
         container.scrollTop = scrollTarget.current;
@@ -205,9 +166,7 @@ export default function OverviewClient({
 
   useEffect(() => {
     if (dataFetched || !session) return;
-
     setSelectedSemester(session.semester);
-
     const supabase = createClient();
 
     async function fetchData() {
@@ -215,25 +174,21 @@ export default function OverviewClient({
         supabase.from("courses").select("course_id, code, name, semester, credits, instructor"),
         supabase.from("course_assessment_components").select("course_id, component_key, label, max_marks"),
       ]);
-
       const mapped = mapDbRowsToCourses(courseRows ?? [], componentRows ?? []);
       const withGrades = await getCoursesWithGrades(session.studentId, mapped);
       setCourses(withGrades);
       setDataFetched(true);
     }
-
     fetchData();
   }, [session?.studentId, dataFetched]);
 
   const refreshCourses = async () => {
     if (!session?.studentId) return;
     const supabase = createClient();
-
     const [{ data: courseRows }, { data: componentRows }] = await Promise.all([
       supabase.from("courses").select("course_id, code, name, semester, credits, instructor"),
       supabase.from("course_assessment_components").select("course_id, component_key, label, max_marks"),
     ]);
-
     const mapped = mapDbRowsToCourses(courseRows ?? [], componentRows ?? []);
     const withGrades = await getCoursesWithGrades(session.studentId, mapped);
     setCourses(withGrades);
@@ -246,14 +201,10 @@ export default function OverviewClient({
     if (!session?.studentId) return;
     const storedRetakes = localStorage.getItem(`puc_retakes_${session.studentId}`);
     const storedRecourses = localStorage.getItem(`puc_recourses_${session.studentId}`);
-    if (storedRetakes) {
-      try { setSelectedRetakeIds(JSON.parse(storedRetakes)); }
-      catch { setSelectedRetakeIds([]); }
-    } else { setSelectedRetakeIds([]); }
-    if (storedRecourses) {
-      try { setSelectedRecourseIds(JSON.parse(storedRecourses)); }
-      catch { setSelectedRecourseIds([]); }
-    } else { setSelectedRecourseIds([]); }
+    if (storedRetakes) { try { setSelectedRetakeIds(JSON.parse(storedRetakes)); } catch { setSelectedRetakeIds([]); } }
+    else { setSelectedRetakeIds([]); }
+    if (storedRecourses) { try { setSelectedRecourseIds(JSON.parse(storedRecourses)); } catch { setSelectedRecourseIds([]); } }
+    else { setSelectedRecourseIds([]); }
   }, [session?.studentId]);
 
   const currentCourses = courses.filter((c) => c.semester === selectedSemester);
@@ -291,16 +242,13 @@ export default function OverviewClient({
   const getBestAndWorstForSemester = (sem: number) => {
     const semCourses = courses.filter((c) => c.semester === sem && c.hasSavedGrades);
     if (semCourses.length === 0) return { best: null, worst: null };
-
     const perf = semCourses.map((c) => {
       const { total, max } = getCourseTotalAndMax(c);
       const pct = max > 0 ? (total / max) * 100 : 0;
       return { course: c, pct };
     });
-
     const best = perf.reduce((prev, curr) => (curr.pct > prev.pct ? curr : prev)).course;
     const worst = perf.reduce((prev, curr) => (curr.pct < prev.pct ? curr : prev)).course;
-
     return { best, worst };
   };
 
@@ -313,29 +261,35 @@ export default function OverviewClient({
     <div className="flex min-h-screen">
       <div className="flex-1 min-w-0 p-6 md:p-8 space-y-8">
         <header className="mb-8">
-          <p className="text-xs text-gray-600 mb-1 font-space-mono tracking-widest uppercase">Dashboards / Overview</p>
+          <p className="page-breadcrumb">Dashboards / Overview</p>
           <h1 className="text-2xl font-syne font-bold text-white">
-            {session?.name ? `Welcome, ${session.name.split(" ")[0]} 👋` : "Overview"}
+            {session?.name ? `Welcome, ${session.name.split(" ")[0]}` : "Overview"}
           </h1>
           {session?.name && (
-            <p className="text-xs text-gray-500 mt-1">Here&apos;s your academic overview for Semester {selectedSemester}.</p>
+            <p className="text-xs text-gray-500 mt-1">Your academic overview for Semester {selectedSemester}.</p>
           )}
         </header>
 
         <section className="grid grid-cols-3 gap-2 sm:gap-5">
-          <StatCard
+          <CircularProgressCard
             title="On Going Sem's CGPA"
             icon={<Award size={16} />}
-            value={ongoingCGPA.toFixed(2)}
+            value={ongoingCGPA}
+            max={4}
+            valueDisplay={`${ongoingCGPA.toFixed(2)}/4.0`}
             subtitle={`Semester ${S} GPA`}
-            trend={S > 1 ? `Semester ${S}` : "First semester"}
+            accentColor="#a3e635"
+            glowColor="rgba(163,230,53,0.15)"
           />
-          <StatCard
+          <CircularProgressCard
             title="Avg CGPA ( Passed Semester's )"
             icon={<PieChart size={16} />}
-            value={averageCGPA.toFixed(2)}
+            value={averageCGPA}
+            max={4}
+            valueDisplay={`${averageCGPA.toFixed(2)}/4.0`}
             subtitle={`Average of semesters 1 to ${S - 1}`}
-            trend={S > 1 ? "Passed semesters avg" : "No passed semesters"}
+            accentColor="#a3e635"
+            glowColor="rgba(163,230,53,0.15)"
           />
           <StatCard
             title="Retakes"
@@ -348,11 +302,26 @@ export default function OverviewClient({
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-syne font-bold text-white text-lg">Academic Insights</h2>
-          </div>
-
+          <h2 className="font-syne font-bold text-white text-lg">Academic Insights</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+            <CircularProgressCard
+              title="Total Attendance"
+              value={totalAttendance}
+              max={100}
+              valueDisplay={`${totalAttendance}%`}
+              subtitle="All semesters combined"
+              accentColor="#a855f7"
+              glowColor="rgba(168,85,247,0.15)"
+            />
+            <CircularProgressCard
+              title="Current Attendance"
+              value={ongoingAttendance}
+              max={100}
+              valueDisplay={`${ongoingAttendance}%`}
+              subtitle={`Semester ${S} attendance`}
+              accentColor="#eab308"
+              glowColor="rgba(234,179,8,0.15)"
+            />
             <AcademicCard
               title="Total Credits"
               value={String(totalCredits)}
@@ -362,20 +331,16 @@ export default function OverviewClient({
               iconColor="text-neon"
             />
             <AcademicCard
-              title="Total Attendance"
-              value={`${totalAttendance}%`}
-              subtitle="All semesters combined"
-              icon={<Percent size={16} />}
-              glowColor="rgba(168,85,247,0.1)"
-              iconColor="text-purple-400"
-            />
-            <AcademicCard
-              title="Ongoing Attendance"
-              value={`${ongoingAttendance}%`}
-              subtitle={`Semester ${S} attendance`}
-              icon={<Clock size={16} />}
-              glowColor="rgba(234,179,8,0.1)"
-              iconColor="text-yellow-400"
+              title="Recourse Courses"
+              value={`${recourseCourses.length}`}
+              subtitle={
+                recourseCourses.length > 0
+                  ? recourseCourses.map((c) => c.code).join(", ")
+                  : "No recourse courses"
+              }
+              icon={<Layers size={16} />}
+              glowColor="rgba(236,72,153,0.1)"
+              iconColor="text-pink-400"
             />
             <AcademicCard
               title="Best Performing"
@@ -395,18 +360,6 @@ export default function OverviewClient({
               iconColor="text-orange-400"
               onClick={() => setShowWorstModal(true)}
             />
-            <AcademicCard
-              title="Recourse Courses"
-              value={`${recourseCourses.length}`}
-              subtitle={
-                recourseCourses.length > 0
-                  ? recourseCourses.map((c) => c.code).join(", ")
-                  : "No recourse courses"
-              }
-              icon={<Layers size={16} />}
-              glowColor="rgba(236,72,153,0.1)"
-              iconColor="text-pink-400"
-            />
           </div>
         </section>
       </div>
@@ -418,21 +371,14 @@ export default function OverviewClient({
         <NotificationsPanel />
       </aside>
 
-      {/* History Modal */}
       {(showBestModal || showWorstModal) && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 cursor-default animate-fade-in"
-          onClick={() => {
-            setShowBestModal(false);
-            setShowWorstModal(false);
-          }}
+          onClick={() => { setShowBestModal(false); setShowWorstModal(false); }}
         >
           <div
-            className="w-full max-w-lg rounded-[32px] p-6 text-left relative overflow-hidden border border-white/[0.05]"
-            style={{
-              background: "#121216",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05)",
-            }}
+            className="w-full max-w-lg rounded-clay-xl p-6 text-left relative overflow-hidden shadow-clay-floating border border-white/[0.05]"
+            style={{ background: "#121216" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -440,20 +386,12 @@ export default function OverviewClient({
                 <h3 className="text-lg font-syne font-bold text-white">
                   {showBestModal ? "Best Performing Courses" : "Worst Performing Courses"}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Historical performance history across semesters
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Historical performance across semesters</p>
               </div>
               <button
-                onClick={() => {
-                  setShowBestModal(false);
-                  setShowWorstModal(false);
-                }}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  boxShadow: "inset -1px -1px 2px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
-                }}
+                onClick={() => { setShowBestModal(false); setShowWorstModal(false); }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors shadow-clay-inset"
+                style={{ background: "rgba(255,255,255,0.05)" }}
               >
                 <X size={16} />
               </button>
@@ -468,15 +406,11 @@ export default function OverviewClient({
               {Array.from({ length: 8 }, (_, i) => i + 1).map((semNum) => {
                 const { best, worst } = getBestAndWorstForSemester(semNum);
                 const targetCourse = showBestModal ? best : worst;
-                
                 return (
                   <div
                     key={semNum}
-                    className="p-4 rounded-2xl flex items-center justify-between border border-white/[0.02]"
-                    style={{
-                      background: "#1c1c22",
-                      boxShadow: "4px 4px 12px rgba(0,0,0,0.3), inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.03)",
-                    }}
+                    className="p-4 rounded-clay-lg flex items-center justify-between border border-white/[0.02] shadow-clay-flat"
+                    style={{ background: "#1c1c22" }}
                   >
                     <div>
                       <p className="text-[10px] font-space-mono text-neon font-bold uppercase tracking-wider">
@@ -486,25 +420,18 @@ export default function OverviewClient({
                         <div className="mt-1">
                           <h4 className="text-sm font-syne font-bold text-white flex items-center gap-2">
                             <span>{targetCourse.name}</span>
-                            <span className="text-xs font-mono font-normal text-gray-500">
-                              ({targetCourse.code})
-                            </span>
+                            <span className="text-xs font-mono font-normal text-gray-500">({targetCourse.code})</span>
                           </h4>
-                          <p className="text-[11px] text-gray-500 mt-0.5">
-                            Instructor: {targetCourse.instructor}
-                          </p>
+                          <p className="text-[11px] text-gray-500 mt-0.5">Instructor: {targetCourse.instructor}</p>
                         </div>
                       ) : (
-                        <p className="text-xs text-gray-600 mt-1 font-medium italic">
-                          No grades entered
-                        </p>
+                        <p className="text-xs text-gray-600 mt-1 font-medium italic">No grades entered</p>
                       )}
                     </div>
-
                     {targetCourse && (
                       <div className="text-right">
                         <span
-                          className="text-xs font-syne font-bold px-2.5 py-1 rounded-xl"
+                          className="text-xs font-syne font-bold px-2.5 py-1 rounded-clay-sm"
                           style={{
                             color: showBestModal ? "#a3e635" : "#f97316",
                             background: showBestModal ? "rgba(163,230,53,0.1)" : "rgba(249,115,22,0.1)",

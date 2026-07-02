@@ -19,7 +19,6 @@ export default function NotificationsPanel() {
 
   useEffect(() => {
     if (!session?.studentId) return;
-
     const supabase = createClient();
     supabase
       .from("notifications")
@@ -42,10 +41,6 @@ export default function NotificationsPanel() {
   }, [session?.studentId]);
 
   const visible = notifications.filter((n) => !dismissed.has(n.id));
-
-  const dismiss = (id: string) => {
-    setDismissed((prev) => new Set([...prev, id]));
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -81,7 +76,7 @@ export default function NotificationsPanel() {
             return (
               <div
                 key={n.id}
-                className="flex gap-3 group p-3 rounded-2xl transition-colors hover:bg-white/[0.02]"
+                className="flex gap-3 group p-3 rounded-clay-lg transition-colors hover:bg-white/[0.02]"
               >
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border ${cfg.bg}`}
@@ -95,7 +90,7 @@ export default function NotificationsPanel() {
                   <p className="text-[10px] text-gray-600 mt-1.5 font-space-mono">{n.time}</p>
                 </div>
                 <button
-                  onClick={() => dismiss(n.id)}
+                  onClick={() => setDismissed((prev) => new Set([...prev, n.id]))}
                   className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-gray-600 hover:text-gray-400 mt-0.5"
                   aria-label="Dismiss notification"
                 >

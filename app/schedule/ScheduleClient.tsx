@@ -29,19 +29,12 @@ function ClassCard({ entry, colorMap }: { entry: ScheduleEntry; colorMap: Map<st
   const c = colorMap.get(entry.courseCode) ?? COLOR_PALETTE[0];
   return (
     <div
-      className="rounded md:rounded-2xl p-0.5 md:p-3.5 transition-all duration-200 hover:-translate-y-0.5 h-full flex flex-col justify-between"
-      style={{
-        background: c.bg,
-        border: `1px solid ${c.border}`,
-        boxShadow: `1px 1px 4px rgba(0, 0, 0, 0.4), inset -1px -1px 2px rgba(0, 0, 0, 0.6), 0 1px 3px ${c.glow}`,
-      }}
+      className="rounded-clay-sm md:rounded-clay-lg p-0.5 md:p-3.5 transition-all duration-200 hover:-translate-y-0.5 h-full flex flex-col justify-between"
+      style={{ background: c.bg, border: `1px solid ${c.border}` }}
     >
       <div className="flex flex-col justify-between h-full">
         <div className="flex md:flex-row flex-col items-start justify-between gap-0.5 md:gap-2 md:mb-2">
-          <span
-            className="text-[7px] md:text-[10px] font-space-mono font-bold px-0.5 md:px-2 py-0.5 rounded"
-            style={{ color: c.text, background: `${c.text}18` }}
-          >
+          <span className="text-[7px] md:text-[10px] font-space-mono font-bold px-0.5 md:px-2 py-0.5 rounded" style={{ color: c.text, background: `${c.text}18` }}>
             {entry.courseCode}
           </span>
           <div className="hidden md:flex items-center gap-1 text-[10px] text-gray-500">
@@ -89,13 +82,11 @@ export default function ScheduleClient({
   const session = useSession();
 
   useEffect(() => {
-    if (dataFetched || !session) return;
-
+    if (!session) return;
     setSemLabel(`${ordinal(session.semester)} Semester`);
     setSectionLabel(`Section ${session.section}`);
-
+    if (dataFetched) return;
     const supabase = createClient();
-
     supabase
       .from("schedules")
       .select("day, start_time, end_time, duration, course_code, course_name, room, instructor, color")
@@ -107,7 +98,6 @@ export default function ScheduleClient({
           setDataFetched(true);
         }
       });
-
     supabase
       .from("courses")
       .select("course_id", { count: "exact", head: true })
@@ -123,7 +113,7 @@ export default function ScheduleClient({
   return (
     <div className="p-1.5 md:p-8">
       <header className="mb-2 md:mb-8">
-        <p className="text-[9px] md:text-xs text-gray-600 mb-0.5 md:mb-1 font-space-mono tracking-widest uppercase">Dashboards / Schedule</p>
+        <p className="page-breadcrumb text-[9px] md:text-xs">Dashboards / Schedule</p>
         <h1 className="text-lg md:text-2xl font-syne font-bold text-white">Schedule</h1>
         <p className="text-[11px] md:text-sm text-gray-500 mt-0.5 md:mt-1">
           Weekly class timetable
@@ -144,13 +134,7 @@ export default function ScheduleClient({
         </div>
       </div>
 
-      <div
-        className="rounded-lg md:rounded-[26px] overflow-hidden"
-        style={{
-          background: "#121216",
-          boxShadow: "10px 10px 30px rgba(0,0,0,0.5), inset -6px -6px 12px rgba(0,0,0,0.7), inset 3px 3px 6px rgba(255,255,255,0.04)",
-        }}
-      >
+      <div className="shadow-clay-raised rounded-clay-sm md:rounded-clay-xl overflow-hidden" style={{ background: "#121216" }}>
         <div className="overflow-x-auto md:overflow-x-visible">
           <div className="min-w-0 md:min-w-[800px] grid grid-cols-[32px_repeat(5,1fr)] md:grid-cols-[100px_repeat(5,1fr)] divide-x divide-y divide-white/[0.04]">
             <div className="p-0.5 md:p-3.5 bg-space-950 font-syne font-bold text-[8px] md:text-xs text-gray-500 flex items-center justify-center">

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 import { createClient } from "./supabase";
 import { useSessionContext } from "./session-context";
@@ -11,10 +11,6 @@ export function useSession(): SessionUser | null {
   const [user, setUser] = useState<SessionUser | null>(contextUser);
 
   useEffect(() => {
-    if (contextUser) {
-      setUser(contextUser);
-      return;
-    }
     // Try loading from custom JWT first (student ID + password auth)
     async function loadFromCustomJwt() {
       try {
@@ -72,10 +68,6 @@ export function useSession(): SessionUser | null {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user?.id) {
         loadFromSupabase();
-      } else {
-        loadFromCustomJwt().then((ok) => {
-          if (!ok) setUser(null);
-        });
       }
     });
 
