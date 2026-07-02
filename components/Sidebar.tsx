@@ -105,6 +105,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
             <input
               type="text"
+              aria-label="Search navigation"
               placeholder="Search..."
               className="clay-input w-full py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none"
             />

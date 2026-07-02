@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
     const { name, phone, semester, section } = body;
 
     const trimmedName = name == null ? null : typeof name === "string" ? name.trim() : undefined;
-    const trimmedPhone = phone == null || phone === "" ? null : typeof phone === "string" ? phone.trim() : undefined;
-    const normalizedSemester = semester == null ? null : Number(semester);
+    const trimmedPhone = phone == null || phone === "" || (typeof phone === "string" && phone.trim() === "") ? null : typeof phone === "string" ? phone.trim() : undefined;
+    const normalizedSemester = semester == null || semester === "" ? null : Number(semester);
     const trimmedSection = section == null ? null : typeof section === "string" ? section.trim() : undefined;
 
     if (
