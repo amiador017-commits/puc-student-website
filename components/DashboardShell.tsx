@@ -16,6 +16,7 @@ export default function DashboardShell({
   user: SessionUser | null;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [localUser, setLocalUser] = useState<SessionUser | null>(user);
   const [loading, setLoading] = useState(!user);
   const pathname = usePathname();
   const router = useRouter();
@@ -23,10 +24,13 @@ export default function DashboardShell({
   const isAuthPage =
     pathname === "/login" ||
     pathname === "/signup" ||
-    pathname?.startsWith("/auth");
+    (pathname?.startsWith("/auth") &&
+      pathname !== "/auth/google/callback" &&
+      pathname !== "/auth/complete-profile");
 
   useEffect(() => {
     if (user) {
+      setLocalUser(user);
       setLoading(false);
       return;
     }
@@ -35,24 +39,68 @@ export default function DashboardShell({
     let active = true;
 
     async function checkAuth() {
-      const { data } = await supabase.auth.getSession();
+      const timeout = new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000)
+      );
 
-      let customSession = null;
-      try {
-        const res = await fetch("/api/auth/session");
-        if (res.ok) customSession = await res.json();
-      } catch {}
+      const doCheck = (async () => {
+        const { data } = await supabase.auth.getSession();
 
-      if (!active) return;
+        let customSession: SessionUser | null = null;
+        try {
+          const res = await fetch("/api/auth/session");
+          if (res.ok) customSession = await res.json();
+        } catch {}
 
-      const isAuthenticated = !!data.session || !!customSession;
+        if (!active) return;
 
-      if (!isAuthenticated) {
+        if (customSession) {
+          setLocalUser(customSession);
+          if (isAuthPage) router.push("/");
+          else setLoading(false);
+          return;
+        }
+
+        if (data.session) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("student_id, name, phone, semester, section, department, batch, linked_gmail")
+            .eq("user_id", data.session.user.id)
+            .single();
+
+          if (profile) {
+            setLocalUser({
+              studentId: profile.student_id,
+              name: profile.name,
+              phone: profile.phone ?? undefined,
+              semester: profile.semester,
+              section: profile.section,
+              department: profile.department,
+              batch: profile.batch,
+              linkedGmail: profile.linked_gmail ?? undefined,
+            });
+            if (isAuthPage) router.push("/");
+            else setLoading(false);
+          } else {
+            if (pathname === "/auth/complete-profile") {
+              setLoading(false);
+            } else {
+              const email = data.session.user.email || "";
+              const name = data.session.user.user_metadata?.full_name || data.session.user.user_metadata?.name || "";
+              router.push(`/auth/complete-profile?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`);
+            }
+          }
+          return;
+        }
+
         if (!isAuthPage) router.push("/login");
         else setLoading(false);
-      } else {
-        if (isAuthPage) router.push("/");
-        else setLoading(false);
+      })();
+
+      try {
+        await Promise.race([doCheck, timeout]);
+      } catch {
+        if (active) setLoading(false);
       }
     }
 
@@ -101,7 +149,7 @@ export default function DashboardShell({
   }
 
   return (
-    <SessionProvider user={user}>
+    <SessionProvider user={localUser}>
       <div className="min-h-screen bg-space-950">
         <Sidebar
           mobileOpen={sidebarOpen}

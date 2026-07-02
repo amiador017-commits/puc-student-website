@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import CourseCard from "../components/CourseCard";
 import NotificationsPanel from "../components/NotificationsPanel";
+import CircularProgressCard from "../components/CircularProgressCard";
 import { SEMESTERS, calculateGPA, getCourseTotalAndMax, type Course, mapDbRowsToCourses, getLetterGrade } from "../lib/mockData";
 import { createClient } from "../lib/supabase";
 import { useSession } from "../lib/useSession";
@@ -41,27 +42,20 @@ function StatCard({
 }) {
   return (
     <div
-      className="p-3 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden"
+      className="p-2.5 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden flex flex-col justify-between aspect-square"
       style={{
         background: "#1c1c22",
         boxShadow: "8px 8px 24px rgba(0,0,0,0.55), inset -6px -6px 12px rgba(0,0,0,0.65), inset 3px 3px 6px rgba(255,255,255,0.06)",
       }}
     >
-      <div className="flex items-center justify-between mb-2 sm:mb-4">
-        <p className="text-[9px] sm:text-xs text-gray-500 uppercase tracking-widest font-semibold truncate mr-1">{title}</p>
-        <div
-          className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center text-neon shrink-0 [&_svg]:w-3.5 [&_svg]:h-3.5 sm:[&_svg]:w-4 sm:[&_svg]:h-4"
-          style={{
-            background: "rgba(163,230,53,0.1)",
-            boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
-          }}
-        >
-          {icon}
-        </div>
+      <div className="text-center sm:text-left">
+        <p className="text-[8px] sm:text-xs text-gray-500 uppercase tracking-widest font-semibold truncate">{title}</p>
       </div>
-      <p className="font-space-mono text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-1">{value}</p>
-      <p className="text-[9px] sm:text-xs text-gray-500 mb-1.5 sm:mb-3 truncate">{subtitle}</p>
-      <div className={`flex items-center gap-1 text-[8px] sm:text-[11px] font-medium ${trendDown ? "text-red-400" : "text-neon"}`}>
+      <div className="flex flex-col items-center sm:items-start my-auto">
+        <p className="font-space-mono text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-1 leading-none">{value}</p>
+        <p className="text-[8px] sm:text-xs text-gray-500 truncate w-full text-center sm:text-left">{subtitle}</p>
+      </div>
+      <div className={`flex items-center justify-center sm:justify-start gap-1 text-[8px] sm:text-[11px] font-medium ${trendDown ? "text-red-400" : "text-neon"}`}>
         <TrendingUp size={10} className={trendDown ? "rotate-180" : ""} />
         <span className="truncate">{trend}</span>
       </div>
@@ -90,7 +84,7 @@ function AcademicCard({
   return (
     <div
       onClick={onClick}
-      className={`p-3 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden flex flex-col justify-between min-h-[110px] sm:min-h-[140px] ${
+      className={`p-2.5 sm:p-5 rounded-[20px] sm:rounded-[26px] relative overflow-hidden flex flex-col justify-between aspect-square ${
         isClickable
           ? "cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]"
           : ""
@@ -101,22 +95,13 @@ function AcademicCard({
         ...(isClickable ? { border: "1px solid rgba(255,255,255,0.02)" } : {}),
       }}
     >
-      <div>
-        <div className="flex items-center justify-between mb-2 sm:mb-3">
-          <p className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest font-semibold truncate mr-1">{title}</p>
-          <div
-            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${iconColor} [&_svg]:w-3.5 [&_svg]:h-3.5 sm:[&_svg]:w-4 sm:[&_svg]:h-4`}
-            style={{
-              background: glowColor,
-              boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1)",
-            }}
-          >
-            {icon}
-          </div>
-        </div>
-        <p className="font-space-mono text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1 truncate">{value}</p>
+      <div className="text-center sm:text-left">
+        <p className="text-[8px] sm:text-xs text-gray-500 uppercase tracking-widest font-semibold truncate">{title}</p>
       </div>
-      <div className="text-[10px] sm:text-xs text-gray-500 font-medium truncate mt-1 sm:mt-2">{subtitle}</div>
+      <div className="flex flex-col items-center sm:items-start my-auto">
+        <p className="font-space-mono text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-1 leading-none">{value}</p>
+      </div>
+      <div className="text-[8px] sm:text-xs text-gray-500 truncate w-full text-center sm:text-left">{subtitle}</div>
     </div>
   );
 }
@@ -323,19 +308,25 @@ export default function OverviewClient({
         </header>
 
         <section className="grid grid-cols-3 gap-2 sm:gap-5">
-          <StatCard
+          <CircularProgressCard
             title="On Going Sem's CGPA"
             icon={<Award size={16} />}
-            value={ongoingCGPA.toFixed(2)}
+            value={ongoingCGPA}
+            max={4}
+            valueDisplay={`${ongoingCGPA.toFixed(2)}/4.0`}
             subtitle={`Semester ${S} GPA`}
-            trend={S > 1 ? `Semester ${S}` : "First semester"}
+            accentColor="#a3e635"
+            glowColor="rgba(163,230,53,0.15)"
           />
-          <StatCard
+          <CircularProgressCard
             title="Avg CGPA ( Passed Semester's )"
             icon={<PieChart size={16} />}
-            value={averageCGPA.toFixed(2)}
+            value={averageCGPA}
+            max={4}
+            valueDisplay={`${averageCGPA.toFixed(2)}/4.0`}
             subtitle={`Average of semesters 1 to ${S - 1}`}
-            trend={S > 1 ? "Passed semesters avg" : "No passed semesters"}
+            accentColor="#a3e635"
+            glowColor="rgba(163,230,53,0.15)"
           />
           <StatCard
             title="Retakes"
@@ -353,6 +344,24 @@ export default function OverviewClient({
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+            <CircularProgressCard
+              title="Total Attendance"
+              value={totalAttendance}
+              max={100}
+              valueDisplay={`${totalAttendance}%`}
+              subtitle="All semesters combined"
+              accentColor="#a855f7"
+              glowColor="rgba(168,85,247,0.15)"
+            />
+            <CircularProgressCard
+              title="Current Attendance"
+              value={ongoingAttendance}
+              max={100}
+              valueDisplay={`${ongoingAttendance}%`}
+              subtitle={`Semester ${S} attendance`}
+              accentColor="#eab308"
+              glowColor="rgba(234,179,8,0.15)"
+            />
             <AcademicCard
               title="Total Credits"
               value={String(totalCredits)}
@@ -362,20 +371,16 @@ export default function OverviewClient({
               iconColor="text-neon"
             />
             <AcademicCard
-              title="Total Attendance"
-              value={`${totalAttendance}%`}
-              subtitle="All semesters combined"
-              icon={<Percent size={16} />}
-              glowColor="rgba(168,85,247,0.1)"
-              iconColor="text-purple-400"
-            />
-            <AcademicCard
-              title="Ongoing Attendance"
-              value={`${ongoingAttendance}%`}
-              subtitle={`Semester ${S} attendance`}
-              icon={<Clock size={16} />}
-              glowColor="rgba(234,179,8,0.1)"
-              iconColor="text-yellow-400"
+              title="Recourse Courses"
+              value={`${recourseCourses.length}`}
+              subtitle={
+                recourseCourses.length > 0
+                  ? recourseCourses.map((c) => c.code).join(", ")
+                  : "No recourse courses"
+              }
+              icon={<Layers size={16} />}
+              glowColor="rgba(236,72,153,0.1)"
+              iconColor="text-pink-400"
             />
             <AcademicCard
               title="Best Performing"
@@ -394,18 +399,6 @@ export default function OverviewClient({
               glowColor="rgba(249,115,22,0.1)"
               iconColor="text-orange-400"
               onClick={() => setShowWorstModal(true)}
-            />
-            <AcademicCard
-              title="Recourse Courses"
-              value={`${recourseCourses.length}`}
-              subtitle={
-                recourseCourses.length > 0
-                  ? recourseCourses.map((c) => c.code).join(", ")
-                  : "No recourse courses"
-              }
-              icon={<Layers size={16} />}
-              glowColor="rgba(236,72,153,0.1)"
-              iconColor="text-pink-400"
             />
           </div>
         </section>

@@ -70,15 +70,20 @@ export async function getSession() {
   }
 }
 
-export async function googleLogin() {
+export async function googleLogin(mode?: string) {
   const { createClient } = await import("./supabase");
   const supabase = createClient();
-  await supabase.auth.signInWithOAuth({
+  const redirectTo = mode
+    ? `${window.location.origin}/auth/google/callback?mode=${mode}`
+    : `${window.location.origin}/auth/google/callback`;
+  const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/auth/google/callback`,
-    },
+    options: { redirectTo },
   });
+  if (error) {
+    console.error("Google OAuth error:", error.message);
+    throw error;
+  }
 }
 
 export async function updateProfile(params: {

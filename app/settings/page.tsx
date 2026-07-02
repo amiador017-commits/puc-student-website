@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { User, Mail, Phone, Lock, Bell, Eye, Globe, Shield, Save, Check } from "lucide-react";
-import { updateProfile } from "../../lib/auth";
+import { updateProfile, googleLogin } from "../../lib/auth";
 import { useSession } from "../../lib/useSession";
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -145,9 +145,9 @@ export default function SettingsPage() {
   const [section, setSection] = useState("");
   const [batch, setBatch] = useState(0);
   const [saved, setSaved] = useState(false);
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [inputGmail, setInputGmail] = useState("");
-  const [linkingLoading, setLinkingLoading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const session = useSession();
 
   useEffect(() => {
@@ -164,6 +164,16 @@ export default function SettingsPage() {
     }
   }, [session]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const linkError = params.get("linkError");
+      if (linkError) {
+        setErrorMsg(linkError);
+      }
+    }
+  }, []);
+
   const [notifications, setNotifications] = useState({
     assignments: true,
     grades: true,
@@ -174,34 +184,47 @@ export default function SettingsPage() {
   });
 
   const handleSave = async () => {
-    await updateProfile({
+    setErrorMsg("");
+    
+    // Check if user is attempting to change password
+    if (currentPassword || newPassword) {
+      if (!currentPassword || !newPassword) {
+        setErrorMsg("Please fill in both current and new password fields to change your password.");
+        return;
+      }
+      
+      const pwdRes = await fetch("/api/auth/update-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      
+      const pwdData = await pwdRes.json();
+      if (!pwdRes.ok) {
+        setErrorMsg(pwdData.error || "Failed to update password.");
+        return;
+      }
+    }
+
+    const res = await updateProfile({
       name,
       phone,
       linkedGmail: email || undefined,
       semester,
       section,
     });
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      window.location.reload();
-    }, 1500);
-  };
-
-  const handleLinkGmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputGmail.trim()) return;
     
-    setLinkingLoading(true);
-    await updateProfile({
-      name,
-      phone,
-      linkedGmail: inputGmail.trim(),
-    });
-    setEmail(inputGmail.trim());
-    setLinkingLoading(false);
-    setShowLinkModal(false);
-    setInputGmail("");
+    if (res.success) {
+      setSaved(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      setTimeout(() => {
+        setSaved(false);
+        window.location.reload();
+      }, 1500);
+    } else {
+      setErrorMsg(res.error || "Failed to update profile.");
+    }
   };
 
   const handleUnlinkGmail = async () => {
@@ -276,7 +299,13 @@ export default function SettingsPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setShowLinkModal(true)}
+                  onClick={async () => {
+                    try {
+                      await googleLogin("link");
+                    } catch (e: any) {
+                      setErrorMsg(e?.message || "Failed to start Google sign-in. Please try again.");
+                    }
+                  }}
                   className="w-full rounded-2xl py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2 text-space-950 transition-all duration-300 hover:scale-[1.01] font-syne animate-pulse"
                   style={{
                     background: "linear-gradient(90deg, #a3e635 0%, #6ee7b7 100%)",
@@ -314,8 +343,8 @@ export default function SettingsPage() {
         <SectionCard title="Security">
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InputField label="Current Password" value="" onChange={() => {}} type="password" placeholder="••••••••" />
-              <InputField label="New Password" value="" onChange={() => {}} type="password" placeholder="••••••••" />
+              <InputField label="Current Password" value={currentPassword} onChange={setCurrentPassword} type="password" placeholder="••••••••" />
+              <InputField label="New Password" value={newPassword} onChange={setNewPassword} type="password" placeholder="••••••••" />
             </div>
             <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: "rgba(163,230,53,0.05)", border: "1px solid rgba(163,230,53,0.1)" }}>
               <Shield size={15} className="text-neon" />
@@ -358,7 +387,10 @@ export default function SettingsPage() {
         </SectionCard>
 
         {/* Save button */}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-4">
+          {errorMsg && (
+            <p className="text-sm text-red-400 font-medium font-syne">{errorMsg}</p>
+          )}
           <button
             onClick={handleSave}
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold font-syne transition-all duration-300 ${
@@ -375,84 +407,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Gmail Linking Modal */}
-      {showLinkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-md rounded-[32px] p-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
-            style={{
-              background: "#121216",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.8), inset -6px -6px 12px rgba(0,0,0,0.7), inset 3px 3px 6px rgba(255,255,255,0.04)",
-              border: "1px solid rgba(163,230,53,0.1)",
-            }}
-          >
-            {/* Header */}
-            <div className="text-center mb-6">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{
-                  background: "rgba(163,230,53,0.1)",
-                  border: "1px solid rgba(163,230,53,0.15)",
-                }}
-              >
-                <svg className="w-6 h-6 text-neon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.48 1 0 6.48 0 13s5.48 12 12.24 12c7.06 0 11.758-4.967 11.758-11.96 0-.807-.087-1.427-.193-1.755H12.24z"/>
-                </svg>
-              </div>
-              <h3 className="font-syne font-bold text-lg text-white">Link Google Account</h3>
-              <p className="text-xs text-gray-500 mt-1">Connect your personal Gmail with your PUC Account</p>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleLinkGmail} className="space-y-4">
-              <div>
-                <label className="block text-[10px] text-gray-500 mb-2 font-semibold uppercase tracking-wider">
-                  Personal Gmail Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={inputGmail}
-                  onChange={(e) => setInputGmail(e.target.value)}
-                  placeholder="username@gmail.com"
-                  className="w-full rounded-2xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-neon/30 transition-all bg-[#0b0b0e]"
-                  style={{
-                    boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.65), inset -2px -2px 4px rgba(255,255,255,0.03)",
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLinkModal(false);
-                    setInputGmail("");
-                  }}
-                  className="flex-1 py-3 rounded-2xl text-xs font-semibold text-gray-400 hover:text-white transition-all bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.04] font-syne"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={linkingLoading}
-                  className="flex-1 py-3 rounded-2xl text-xs font-semibold text-space-950 transition-all duration-300 font-syne flex items-center justify-center gap-2"
-                  style={{
-                    background: "#a3e635",
-                    boxShadow: "0 4px 12px rgba(163,230,53,0.2)",
-                  }}
-                >
-                  {linkingLoading ? (
-                    <span className="w-4 h-4 border-2 border-space-950 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    "Authorize"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

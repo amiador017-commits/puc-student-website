@@ -693,7 +693,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
               {/* Google login button */}
               <button
                 type="button"
-                onClick={googleLogin}
+                onClick={() => googleLogin()}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-[11px] font-semibold text-white border border-white/[0.02] transition-all hover:bg-white/[0.02] active:translate-y-[1px]"
                 style={{
                   background: "#1c1c22",

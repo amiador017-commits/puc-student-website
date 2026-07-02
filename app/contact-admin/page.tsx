@@ -9,7 +9,7 @@ interface Admin {
   name: string;
   role: string;
   phone: string;
-  whatsap_url: string;
+  whatsapp_url: string;
 }
 
 interface ClassRep {
@@ -18,7 +18,7 @@ interface ClassRep {
   section: string;
   name: string;
   phone: string;
-  whatsap_url: string;
+  whatsapp_url: string;
 }
 
 export default function ContactAdminPage() {
@@ -34,8 +34,8 @@ export default function ContactAdminPage() {
 
     async function fetchData() {
       const [adminsRes, classRepsRes] = await Promise.all([
-        supabase.from("admins").select("id, name, role, phone, whatsap_url"),
-        supabase.from("class_reps").select("id, semester, section, name, phone, whatsap_url"),
+        supabase.from("admins").select("id, name, role, phone, whatsapp_url"),
+        supabase.from("class_reps").select("id, semester, section, name, phone, whatsapp_url"),
       ]);
 
       if (adminsRes.data) setAdmins(adminsRes.data as Admin[]);
@@ -87,13 +87,18 @@ export default function ContactAdminPage() {
                   boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.5), inset -2px -2px 4px rgba(255,255,255,0.03)",
                 }}
               >
-                <div>
-                  <h3 className="text-sm font-semibold text-white font-syne">{admin.name}</h3>
-                  <p className="text-xs text-gray-500 mb-2">{admin.role}</p>
+                <div className="flex justify-between items-start w-full">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white font-syne">{admin.name}</h3>
+                    <p className="text-xs text-gray-500 mb-2">{admin.role}</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neon/10 text-neon border border-neon/20 font-space-mono tracking-wider uppercase">
+                    Admin
+                  </span>
                 </div>
                 
                 <a
-                  href={admin.whatsap_url}
+                  href={admin.whatsapp_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl text-space-950 transition-all duration-200 hover:opacity-90 w-fit"
@@ -154,15 +159,20 @@ export default function ContactAdminPage() {
                   boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.5), inset -2px -2px 4px rgba(255,255,255,0.03)",
                 }}
               >
-                <div>
-                  <h3 className="text-sm font-semibold text-white font-syne">{activeCR.name}</h3>
-                  <p className="text-xs text-gray-500 mb-2">
-                    {activeCR.semester === 1 ? "1st" : activeCR.semester === 2 ? "2nd" : activeCR.semester === 3 ? "3rd" : `${activeCR.semester}th`} Semester ({activeCR.section})
-                  </p>
+                <div className="flex justify-between items-start w-full">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white font-syne">{activeCR.name}</h3>
+                    <p className="text-xs text-gray-500 mb-2">
+                      B.Sc. in CSE ( PUC )
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-space-mono tracking-wider whitespace-nowrap">
+                    CR of Sec {activeCR.section}
+                  </span>
                 </div>
                 
                 <a
-                  href={activeCR.whatsap_url}
+                  href={activeCR.whatsapp_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl text-white transition-all duration-200 hover:opacity-90 w-fit"
